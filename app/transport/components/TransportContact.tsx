@@ -31,7 +31,12 @@ export default function TransportContact() {
       ? `https://wa.me/${phoneNumber}?text=${encodedText}`
       : `https://web.whatsapp.com/send?phone=${phoneNumber}&text=${encodedText}`
 
-    window.open(url, "_blank")
+    // Fix: No blank tab on mobile
+    if (isMobile) {
+      window.location.href = url
+    } else {
+      window.open(url, "_blank")
+    }
 
     setFormData({
       name: "",
@@ -187,70 +192,62 @@ export default function TransportContact() {
                 <div className="flex items-start gap-4">
                   <Phone className="text-red-600 mt-1 w-6 h-6" />
                   <div>
-  <h4 className="font-bold text-lg mb-1 text-gray-900">Phone</h4>
-  <p className="text-gray-700">
-    <a href="tel:+918458035964" className="hover:underline">
-      +91 8458035964
-    </a>
-  </p>
-  <p className="text-gray-700">
-    <a href="tel:+917855877317" className="hover:underline">
-      +91 7855877317
-    </a>
-  </p>
-  <p className="text-red-600 text-base mt-1 font-semibold">24/7 Emergency</p>
-</div>
-</div>
-<div className="flex items-start gap-4">
-  <Mail className="text-red-600 mt-1 w-6 h-6" />
-  <div>
-    <h4 className="font-bold text-lg mb-1 text-gray-900">Email</h4>
-    <p className="text-gray-700 break-all">
-      <a href="mailto:info.at@archanagroups.in" className="hover:underline">
-        info.at@archanagroups.in
-      </a>
-    </p>
-    <p className="text-gray-700 break-all">
-      <a href="mailto:archanatransportrgd@gmail.com" className="hover:underline">
-        archanatransportrgd@gmail.com
-      </a>
-    </p>
-  </div>
-</div>
-<div className="flex items-start gap-4">
-  <MapPin className="text-red-600 mt-1 w-6 h-6" />
-  <div>
-    <h4 className="font-bold text-lg mb-1 text-gray-900">Registered Office</h4>
-    <p className="text-gray-700 leading-relaxed">
-      Gautam Nagar, 6th Lane,<br />
-      Dig. Door No. 15,<br />
-      Rayagada, Odisha - 765001
-    </p>
-  </div>
-</div>
+                    <h4 className="font-bold text-lg mb-1 text-gray-900">Phone</h4>
+                    <p className="text-gray-700">
+                      <a href="tel:+918458035964" className="hover:underline">+91 8458035964</a>
+                    </p>
+                    <p className="text-gray-700">
+                      <a href="tel:+917855877317" className="hover:underline">+91 7855877317</a>
+                    </p>
+                    <p className="text-red-600 text-base mt-1 font-semibold">24/7 Emergency</p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <Mail className="text-red-600 mt-1 w-6 h-6" />
+                  <div>
+                    <h4 className="font-bold text-lg mb-1 text-gray-900">Email</h4>
+                    <p className="text-gray-700 break-all">
+                      <a href="mailto:info.at@archanagroups.in" className="hover:underline">info.at@archanagroups.in</a>
+                    </p>
+                    <p className="text-gray-700 break-all">
+                      <a href="mailto:archanatransportrgd@gmail.com" className="hover:underline">archanatransportrgd@gmail.com</a>
+                    </p>
+                  </div>
+                </div>
+                <div className="flex items-start gap-4">
+                  <MapPin className="text-red-600 mt-1 w-6 h-6" />
+                  <div>
+                    <h4 className="font-bold text-lg mb-1 text-gray-900">Registered Office</h4>
+                    <p className="text-gray-700 leading-relaxed">
+                      Gautam Nagar, 6th Lane,<br />
+                      Dig. Door No. 15,<br />
+                      Rayagada, Odisha - 765001
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* Google Map */}
             <div className="bg-white rounded-xl md:rounded-2xl p-4 md:p-6 shadow-lg">
-  <h4 className="font-bold text-gray-900 text-base md:text-lg mb-3 md:mb-4 flex items-center">
-    <MapPin size={18} className="text-red-600 mr-2 md:w-5 md:h-5" />
-    Find Us Here
-  </h4>
+              <h4 className="font-bold text-gray-900 text-base md:text-lg mb-3 md:mb-4 flex items-center">
+                <MapPin size={18} className="text-red-600 mr-2 md:w-5 md:h-5" />
+                Find Us Here
+              </h4>
 
-  <div className="w-full h-60 md:h-80 bg-gray-200 rounded-lg md:rounded-2xl overflow-hidden">
-    <iframe
-      src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d9166.754844724384!2d83.421363!3d19.161417!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a3b4355db06ea5d%3A0xb49ddcb2b2527a83!2sGautam%20Nagar%2C%20Raniguda%20Farm%2C%20Rayagada%2C%20Odisha%20765001!5e1!3m2!1sen!2sin!4v1751343466736!5m2!1sen!2sin"
-      width="100%"
-      height="100%"
-      style={{ border: 0 }}
-      allowFullScreen
-      loading="lazy"
-      referrerPolicy="no-referrer-when-downgrade"
-      className="rounded-lg md:rounded-2xl"
-    />
-  </div>
-</div>
+              <div className="w-full h-60 md:h-80 bg-gray-200 rounded-lg md:rounded-2xl overflow-hidden">
+                <iframe
+                  src="https://www.google.com/maps/embed?pb=!1m14!1m8!1m3!1d9166.754844724384!2d83.421363!3d19.161417!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3a3b4355db06ea5d%3A0xb49ddcb2b2527a83!2sGautam%20Nagar%2C%20Raniguda%20Farm%2C%20Rayagada%2C%20Odisha%20765001!5e1!3m2!1sen!2sin!4v1751343466736!5m2!1sen!2sin"
+                  width="100%"
+                  height="100%"
+                  style={{ border: 0 }}
+                  allowFullScreen
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  className="rounded-lg md:rounded-2xl"
+                />
+              </div>
+            </div>
           </motion.div>
         </div>
       </div>
