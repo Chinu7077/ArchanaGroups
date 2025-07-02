@@ -101,3 +101,7 @@ textarea:focus {
     @apply flex items-center gap-2 sm:gap-3;
   }
 }
+.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+}

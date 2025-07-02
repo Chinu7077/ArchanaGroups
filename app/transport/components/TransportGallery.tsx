@@ -53,7 +53,7 @@ export default function TransportGallery() {
       title: "Stuck Truck? We’re on It — Rain or Shine",
       date: "July 01, 2025",
       likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"], // Video slide here
+      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
     },
   ];
 
@@ -87,14 +87,14 @@ export default function TransportGallery() {
     setCurrentSlide(0);
     setIsLiked(false);
     setIsVideoPlaying(false);
-    document.body.style.overflow = "hidden";
+    document.body.classList.add("no-scroll");
   };
 
   const closeLightbox = () => {
     setSelectedImage(null);
     setCurrentSlide(0);
     setIsVideoPlaying(false);
-    document.body.style.overflow = "unset";
+    document.body.classList.remove("no-scroll");
     window.scrollTo(0, scrollPosition);
   };
 
@@ -185,7 +185,7 @@ export default function TransportGallery() {
           ))}
         </div>
 
-        <AnimatePresence>
+        <AnimatePresence mode="wait">
           {selectedImage !== null && (
             <motion.div
               initial={{ opacity: 0 }}
