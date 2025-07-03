@@ -24,7 +24,7 @@ export default function TransportContact() {
 📝 Message: ${message}`
 
     const encodedText = encodeURIComponent(text)
-    const phoneNumber = "918018187808"
+    const phoneNumber = "918458035964"
     const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent)
 
     const url = isMobile

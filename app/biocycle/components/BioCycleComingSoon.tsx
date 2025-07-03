@@ -2,11 +2,23 @@
 
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Leaf, Heart, Globe, ArrowRight, Mail, CheckCircle } from "lucide-react";
+import {
+  Leaf,
+  Heart,
+  Globe,
+  ArrowRight,
+  Mail,
+  CheckCircle,
+} from "lucide-react";
 import Image from "next/image";
 
 export default function BioCycleComingSoon() {
-  const [timeLeft, setTimeLeft] = useState({ days: 0, hours: 0, minutes: 0, seconds: 0 });
+  const [timeLeft, setTimeLeft] = useState({
+    days: 0,
+    hours: 0,
+    minutes: 0,
+    seconds: 0,
+  });
   const [email, setEmail] = useState("");
   const [showToast, setShowToast] = useState(false);
 
@@ -30,7 +42,9 @@ export default function BioCycleComingSoon() {
       const distance = launchDate.getTime() - now;
 
       const days = Math.floor(distance / (1000 * 60 * 60 * 24));
-      const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+      const hours = Math.floor(
+        (distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60)
+      );
       const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
       const seconds = Math.floor((distance % (1000 * 60)) / 1000);
 
@@ -140,7 +154,9 @@ export default function BioCycleComingSoon() {
                 transition={{ duration: 0.6, delay: 1 + index * 0.1 }}
                 className="bg-green-50 rounded-2xl p-6 border-2 border-green-200"
               >
-                <div className="text-4xl md:text-5xl font-bold text-green-600 mb-2">{item.value}</div>
+                <div className="text-4xl md:text-5xl font-bold text-green-600 mb-2">
+                  {item.value}
+                </div>
                 <div className="text-gray-600 font-medium">{item.label}</div>
               </motion.div>
             ))}
@@ -152,17 +168,20 @@ export default function BioCycleComingSoon() {
               {
                 icon: <Leaf size={40} />,
                 title: "Eco-Friendly",
-                description: "Zero emission transportation solutions for a cleaner planet",
+                description:
+                  "Zero emission transportation solutions for a cleaner planet",
               },
               {
                 icon: <Heart size={40} />,
                 title: "Health Focused",
-                description: "Promoting active and healthy lifestyles for everyone",
+                description:
+                  "Promoting active and healthy lifestyles for everyone",
               },
               {
                 icon: <Globe size={40} />,
                 title: "Sustainable Future",
-                description: "Contributing to a sustainable and greener tomorrow",
+                description:
+                  "Contributing to a sustainable and greener tomorrow",
               },
             ].map((feature, index) => (
               <motion.div
@@ -175,7 +194,9 @@ export default function BioCycleComingSoon() {
                 <div className="w-20 h-20 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-6 text-green-600">
                   {feature.icon}
                 </div>
-                <h3 className="font-bold text-gray-900 text-xl mb-4">{feature.title}</h3>
+                <h3 className="font-bold text-gray-900 text-xl mb-4">
+                  {feature.title}
+                </h3>
                 <p className="text-gray-600 text-lg">{feature.description}</p>
               </motion.div>
             ))}
@@ -188,8 +209,9 @@ export default function BioCycleComingSoon() {
             transition={{ duration: 0.8, delay: 2 }}
             className="text-xl text-gray-600 leading-relaxed max-w-4xl mx-auto mb-12"
           >
-            We're working on something amazing! Get ready for innovative, eco-friendly transportation solutions that
-            will revolutionize sustainable mobility with cutting-edge technology.
+            We're working on something amazing! Get ready for innovative,
+            eco-friendly transportation solutions that will revolutionize
+            sustainable mobility with cutting-edge technology.
           </motion.p>
 
           {/* Newsletter Form */}
@@ -199,9 +221,12 @@ export default function BioCycleComingSoon() {
             transition={{ duration: 0.8, delay: 2.2 }}
             className="bg-gradient-to-r from-green-50 to-green-100 rounded-2xl p-8"
           >
-            <h3 className="text-2xl font-bold text-gray-900 mb-4">Be the First to Know</h3>
+            <h3 className="text-2xl font-bold text-gray-900 mb-4">
+              Be the First to Know
+            </h3>
             <p className="text-gray-600 mb-6 text-lg">
-              Subscribe to get notified when we launch and receive exclusive early access offers.
+              Subscribe to get notified when we launch and receive exclusive
+              early access offers.
             </p>
             <div className="flex flex-col sm:flex-row gap-4 max-w-lg mx-auto">
               <input
@@ -229,7 +254,9 @@ export default function BioCycleComingSoon() {
           transition={{ duration: 0.8, delay: 2.4 }}
           className="text-center"
         >
-          <p className="text-gray-600 mb-4 text-lg">Have questions? We'd love to hear from you!</p>
+          <p className="text-gray-600 mb-4 text-lg">
+            Have questions? We'd love to hear from you!
+          </p>
           <a
             href="mailto:info.abc@archanagroups.in"
             className="inline-flex items-center space-x-2 text-green-600 hover:text-green-700 font-bold text-xl transition-colors"

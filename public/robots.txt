@@ -1,0 +1,9 @@
+# *
+User-agent: *
+Allow: /
+
+# Host
+Host: https://archanagroups.in
+
+# Sitemaps
+Sitemap: https://archanagroups.in/sitemap.xml
