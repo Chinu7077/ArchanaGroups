@@ -15,12 +15,12 @@ import {
 export default function TransportGallery() {
   const images = [
     {
-      src: "/1-3.jpg",
+      src: "/1-3.JPG",
       alt: "Smooth and safe delivery, every time",
       title: "Always Moving, Always Ready",
       date: "July 01, 2025",
       likes: 24,
-      relatedImages: ["/1-2.jpg", "/1-4.jpg", "/1-3.jpg", "/1-5.mp4"],
+      relatedImages: ["/1-2.JPG", "/1-4.JPG", "/1-3.JPG", "/1-5.mp4"],
     },
     {
       src: "/2-1.jpg",
