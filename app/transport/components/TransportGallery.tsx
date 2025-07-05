@@ -31,7 +31,7 @@ export default function TransportGallery() {
       relatedImages: ["/2-2.JPG", "/2-3.JPG", "/2-4.JPG", "/2-5.mp4"],
     },
     {
-      src: "/3-1.jpg",
+      src: "/3-1.JPG",
       alt: "Team attending safety briefing",
       title: "Team & Safety Awareness",
       date: "July 03, 2025",
