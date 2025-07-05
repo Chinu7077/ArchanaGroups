@@ -22,6 +22,7 @@ export default function HomePage() {
   };
 
   return (
+    <div className="h-screen overflow-y-scroll">
     <main className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50 relative overflow-hidden">
       {/* Decorative Circles */}
       <div className="absolute inset-0 overflow-hidden">
@@ -88,16 +89,13 @@ export default function HomePage() {
 
           {/* Subtext */}
           <motion.p
-  initial={{ opacity: 0, y: 30 }}
-  animate={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8, delay: 1.2 }}
-  className="text-sm sm:text-base md:text-xl text-gray-600 max-w-md sm:max-w-2xl mx-auto leading-relaxed text-center"
->
-  Trusted partner in industrial transport and logistics,
-  <br />
-  empowering progress with clean and efficient mobility.
-</motion.p>
-
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 1.2 }}
+            className="text-sm sm:text-base md:text-xl text-gray-600 max-w-md sm:max-w-2xl mx-auto leading-relaxed text-center"
+          >
+            From waste handling to BioFuel making we turn problems into solutions.
+          </motion.p>
         </div>
       </motion.header>
 
@@ -125,14 +123,13 @@ export default function HomePage() {
                     />
                   </div>
                   <h3 className="text-3xl font-bold mb-2">Archana Transport</h3>
-                  <p className="text-red-100 text-lg">Heavy Vehicle Solutions</p>
+                  <p className="text-red-100 text-lg">Bulk Waste. Big Solutions..</p>
                 </div>
               </div>
               <div className="p-8 text-center">
-              <p className="text-sm md:text-lg lg:text-xl text-gray-600 mb-6">
-  Experts in heavy transport and mining logistics <br />
-  FlyAsh, Coal, RedMud, and more.
-</p>
+                <p className="text-sm md:text-lg lg:text-xl text-gray-600 mb-6">
+                  Handling Fly Ash & Red Mud with<br /> Industrial Precision.
+                </p>
                 <div className="inline-flex items-center justify-center space-x-3 bg-red-600 text-white px-8 py-3 rounded-2xl font-bold text-lg hover:bg-red-700 transition-all duration-300 shadow-lg hover:shadow-xl group-hover:scale-105">
                   <span>Enter Portal</span>
                   <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
@@ -162,17 +159,12 @@ export default function HomePage() {
                     />
                   </div>
                   <h3 className="text-3xl font-bold mb-2">Archana BioCycle</h3>
-                  <p className="text-green-100 text-lg">Sustainable Mobility</p>
-                  <div className="flex justify-center mt-4">
-                    <span className="bg-green-200 text-green-800 px-3 py-1 rounded-full text-sm font-bold">
-                      Coming Soon
-                    </span>
-                  </div>
+                  <p className="text-green-100 text-lg">Clean Fuel. Green Future.</p>
                 </div>
               </div>
               <div className="p-8 text-center">
-              <p className="text-sm md:text-lg lg:text-xl text-gray-600 mb-6">
-                  Eco-friendly transportation technology for a cleaner tomorrow.
+                <p className="text-sm md:text-lg lg:text-xl text-gray-600 mb-6">
+                  Giving waste a new purpose, shaping a greener tomorrow.
                 </p>
                 <div className="inline-flex items-center justify-center space-x-3 bg-green-600 text-white px-8 py-3 rounded-2xl font-bold text-lg hover:bg-green-700 transition-all duration-300 shadow-lg hover:shadow-xl group-hover:scale-105">
                   <span>Enter Portal</span>
@@ -186,38 +178,46 @@ export default function HomePage() {
 
       {/* Footer */}
       <motion.footer
-  initial={{ opacity: 0 }}
-  animate={{ opacity: 1 }}
-  transition={{ duration: 0.8, delay: 1.4 }}
-  className="relative z-10 py-12 px-4 bg-white bg-opacity-80 backdrop-blur-sm mt-20"
->
-  <div className="max-w-4xl mx-auto text-center">
-    {/* Logo + Brand Name */}
-    <div className="flex flex-col items-center justify-center mb-6 sm:flex-row sm:gap-3">
-      <div className="flex items-center">
-        <div className="text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent">
-          A
-        </div>
-        <div className="text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent ml-[-14px]">
-          G
-        </div>
-      </div>
-      <span className="text-xl sm:text-2xl font-semibold text-gray-800 mt-2 sm:mt-0 sm:ml-4">
-        Archana Groups
-      </span>
-    </div>
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.8, delay: 1.4 }}
+        className="relative z-10 py-12 px-4 bg-white bg-opacity-80 backdrop-blur-sm mt-20"
+      >
+        <div className="max-w-4xl mx-auto text-center">
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
+          <p className="transition-colors duration-300 hover:text-red-400 hover:text-green-400 hover:text-black">
 
-    {/* Slogan */}
-    <p className="text-gray-600 mb-4 text-sm sm:text-lg px-2 sm:px-0">
-  Efficiency meets responsibility in every kilometer we&nbsp;move.
-</p>
+          &copy; 2025 Archana Groups. All rights reserved.
 
-    {/* Copyright */}
-    <p className="text-gray-500 text-sm sm:text-base">
-  © 2022 Archana Groups. All rights reserved.
-</p>
-  </div>
-</motion.footer>
+            </p>
+            <div className="flex items-center space-x-4 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-500">Transport Efficiency</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-500">Clean BioFuel Solutions</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Animated Banner */}
+          <div className="mt-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-green-600/20 via-black/30 to-red-600/20 animate-pulse rounded-full blur-xl"></div>
+            <div className="relative text-center py-2">
+              <p className="text-xs text-black font-medium">♻️ Sustainable Waste & Fuel Solutions ♻️</p>
+            </div>
+          </div>
+
+          {/* Slogan */}
+          <p className="text-gray-600 mt-6 text-sm sm:text-lg px-2 sm:px-0">
+         
+          </p>
+        </div>
+      </motion.footer>
     </main>
+
+    </div>
   );
 }

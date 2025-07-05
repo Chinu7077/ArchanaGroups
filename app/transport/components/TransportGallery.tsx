@@ -3,57 +3,79 @@
 import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import Image from "next/image";
-import { ZoomIn, ChevronLeft, ChevronRight, Heart, X, Play } from "lucide-react";
+import {
+  ZoomIn,
+  ChevronLeft,
+  ChevronRight,
+  Heart,
+  X,
+  Play,
+} from "lucide-react";
 
 export default function TransportGallery() {
   const images = [
     {
-      src: "/6-1.jpeg?height=400&width=600",
-      alt: "Stuck Truck? We’re on It — Rain or Shine",
-      title: "Stuck Truck? We’re on It — Rain or Shine",
+      src: "/1-3.jpg",
+      alt: "Smooth and safe delivery, every time",
+      title: "Always Moving, Always Ready",
       date: "July 01, 2025",
       likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
+      relatedImages: ["/1-2.jpg", "/1-4.jpg", "/1-3.jpg", "/1-5.mp4"],
     },
     {
-      src: "/6-1.jpeg?height=400&width=600",
-      alt: "Stuck Truck? We’re on It — Rain or Shine",
-      title: "Stuck Truck? We’re on It — Rain or Shine",
-      date: "July 01, 2025",
-      likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
+      src: "/2-1.jpg",
+      alt: "Loading red mud from storage onto bulkers",
+      title: "Red Mud Loading Operations",
+      date: "July 02, 2025",
+      likes: 32,
+      relatedImages: ["/2-2.jpg", "/2-3.jpg", "/2-4.jpg", "/2-5.mp4"],
     },
     {
-      src: "/6-1.jpeg?height=400&width=600",
-      alt: "Stuck Truck? We’re on It — Rain or Shine",
-      title: "Stuck Truck? We’re on It — Rain or Shine",
-      date: "July 01, 2025",
-      likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
+      src: "/3-1.jpg",
+      alt: "Team attending safety briefing",
+      title: "Team & Safety Awareness",
+      date: "July 03, 2025",
+      likes: 28,
+      relatedImages: [
+        "/3-2.jpg",
+        "/3-3.jpg",
+        "/3-4.jpg",
+        "/3-6.mp4",
+        "/3-5.jpg",
+        "/3-7.jpg",
+      ],
     },
     {
-      src: "/6-1.jpeg?height=400&width=600",
-      alt: "Stuck Truck? We’re on It — Rain or Shine",
-      title: "Stuck Truck? We’re on It — Rain or Shine",
-      date: "July 01, 2025",
-      likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
+      src: "/4-2.jpg",
+      alt: "Fly ash transport in progress",
+      title: "Fly Ash Transport Fleet",
+      date: "July 04, 2025",
+      likes: 41,
+      relatedImages: [
+        "/4-3.jpg",
+        "/4-4.jpg",
+        "/4-6.jpg",
+        "/4-5.mp4",
+        "/4-8.jpg",
+        "/4-9.jpg",
+        "/4-10.jpg",
+      ],
     },
     {
-      src: "/6-1.jpeg?height=400&width=600",
-      alt: "Stuck Truck? We’re on It — Rain or Shine",
-      title: "Stuck Truck? We’re on It — Rain or Shine",
-      date: "July 01, 2025",
-      likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
+      src: "/5-1.jpg",
+      alt: "Every Journey Ends With Cleanliness.",
+      title: "After-Delivery Clean-Up",
+      date: "July 05, 2025",
+      likes: 19,
+      relatedImages: ["/5-2.jpg", "/5-3.jpg", "/5-4.mp4", "/5-5.jpg"],
     },
     {
-      src: "/6-1.jpeg?height=400&width=600",
-      alt: "Stuck Truck? We’re on It — Rain or Shine",
-      title: "Stuck Truck? We’re on It — Rain or Shine",
-      date: "July 01, 2025",
-      likes: 24,
-      relatedImages: ["/6-2.jpeg", "/6-3.jpeg", "/6-4.mp4"],
+      src: "/6-3.jpg",
+      alt: "Bulkers on-site",
+      title: "Bulk Transport Fleet",
+      date: "July 06, 2025",
+      likes: 33,
+      relatedImages: ["/6-3.jpg", "/6-4.jpg", "/6-5.jpg", "/6-5.mp4"],
     },
   ];
 
@@ -66,8 +88,9 @@ export default function TransportGallery() {
 
   useEffect(() => {
     if (selectedImage !== null) {
+      const totalSlides = 1 + images[selectedImage].relatedImages.length;
       const interval = setInterval(() => {
-        setCurrentSlide((prev) => (prev + 1) % 4);
+        setCurrentSlide((prev) => (prev + 1) % totalSlides);
       }, 10000);
       return () => clearInterval(interval);
     }
@@ -99,11 +122,15 @@ export default function TransportGallery() {
   };
 
   const nextSlide = () => {
-    setCurrentSlide((prev) => (prev + 1) % 4);
+    if (selectedImage === null) return;
+    const totalSlides = 1 + images[selectedImage].relatedImages.length;
+    setCurrentSlide((prev) => (prev + 1) % totalSlides);
   };
 
   const prevSlide = () => {
-    setCurrentSlide((prev) => (prev - 1 + 4) % 4);
+    if (selectedImage === null) return;
+    const totalSlides = 1 + images[selectedImage].relatedImages.length;
+    setCurrentSlide((prev) => (prev - 1 + totalSlides) % totalSlides);
   };
 
   const getCurrentImage = () => {
@@ -143,8 +170,12 @@ export default function TransportGallery() {
           viewport={{ once: false, amount: 0.3 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Gallery</h2>
-          <p className="text-xl text-gray-600">See our operations, fleet, and team</p>
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Gallery
+          </h2>
+          <p className="text-xl text-gray-600">
+            See our operations, fleet, and team
+          </p>
         </motion.div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -168,7 +199,9 @@ export default function TransportGallery() {
               />
               <div className="absolute inset-0 bg-gradient-to-t from-black via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-all duration-300">
                 <div className="absolute bottom-0 left-0 right-0 p-6">
-                  <p className="text-white font-bold text-lg mb-2">{image.title}</p>
+                  <p className="text-white font-bold text-lg mb-2">
+                    {image.title}
+                  </p>
                   <div className="flex items-center justify-between text-white text-sm">
                     <span>{image.date}</span>
                     <div className="flex items-center space-x-1">
@@ -203,14 +236,12 @@ export default function TransportGallery() {
               >
                 <div className="relative flex justify-center items-center mb-2 sm:mb-4">
                   {getCurrentImage()?.isVideo ? (
-                    <div
-                      className="relative w-full"
-                      onClick={handleVideoClick}
-                    >
+                    <div className="relative w-full" onClick={handleVideoClick}>
                       <video
                         ref={videoRef}
                         src={getCurrentImage()?.src || ""}
                         className="w-full h-auto max-h-[50vh] sm:max-h-[60vh] rounded-xl sm:rounded-2xl"
+                        controls
                       />
                       {!isVideoPlaying && (
                         <div className="absolute inset-0 flex items-center justify-center bg-black bg-opacity-30 rounded-xl sm:rounded-2xl transition-opacity duration-300">
@@ -253,8 +284,12 @@ export default function TransportGallery() {
                 <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 mx-auto max-w-sm sm:max-w-2xl w-full text-xs sm:text-sm">
                   <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between mb-2 sm:mb-4 gap-2 sm:gap-4">
                     <div>
-                      <h3 className="text-sm sm:text-lg font-bold text-gray-900">{getCurrentImage()?.title}</h3>
-                      <p className="text-gray-600 text-xs sm:text-sm">{images[selectedImage].date}</p>
+                      <h3 className="text-sm sm:text-lg font-bold text-gray-900">
+                        {getCurrentImage()?.title}
+                      </h3>
+                      <p className="text-gray-600 text-xs sm:text-sm">
+                        {images[selectedImage].date}
+                      </p>
                     </div>
                     <button
                       onClick={() => setIsLiked(!isLiked)}
@@ -264,12 +299,18 @@ export default function TransportGallery() {
                           : "bg-gray-100 text-gray-600 hover:bg-gray-200"
                       }`}
                     >
-                      <Heart size={16} className={isLiked ? "fill-current" : ""} />
-                      <span>{images[selectedImage].likes + (isLiked ? 1 : 0)}</span>
+                      <Heart
+                        size={16}
+                        className={isLiked ? "fill-current" : ""}
+                      />
+                      <span>
+                        {images[selectedImage].likes + (isLiked ? 1 : 0)}
+                      </span>
                     </button>
                   </div>
                   <p className="text-center text-gray-500 text-[10px] sm:text-xs">
-                    {currentSlide + 1} of 4
+                    {currentSlide + 1} of{" "}
+                    {1 + images[selectedImage].relatedImages.length}
                   </p>
                 </div>
               </motion.div>

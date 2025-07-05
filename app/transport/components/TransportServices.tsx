@@ -55,7 +55,7 @@ export default function TransportServices() {
         >
           <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">About Our Services</h2>
           <p className="text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-          Since 2022, we’ve been powering industrial logistics with efficient and professional transport of Fly Ash, Red Mud, and Coal — using a well-maintained fleet of dumpers and bulkers built for heavy-duty operations.
+          Since 2022, we’ve been powering industrial logistics with efficient and professional transport of Fly Ash, Red Mud, and More — using a well-maintained fleet of dumpers and bulkers built for heavy-duty operations.
           </p>
         </motion.div>
 

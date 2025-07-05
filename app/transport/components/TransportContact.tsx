@@ -16,7 +16,7 @@ export default function TransportContact() {
     e.preventDefault()
 
     const { name, email, phone, message } = formData
-    const text = `🚛 Inquiry from Archana Transport 🚛
+    const text = `🚛 Inquiry from Archana Transport .
 
 👤 Name: ${name}
 📧 Email: ${email}

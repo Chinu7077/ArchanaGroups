@@ -24,38 +24,38 @@ export default function TransportFooter() {
 
   return (
     <footer className="bg-gray-900 text-white">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
-        <div className="grid md:grid-cols-4 gap-10">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid md:grid-cols-4 gap-6">
           {/* Company Info */}
           <div className="md:col-span-2">
-            <div className="flex items-center space-x-3 mb-6">
-              <div className="w-14 h-14 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-md">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="w-12 h-12 bg-white/30 backdrop-blur-md rounded-2xl flex items-center justify-center shadow-md">
                 <img
                   src="/AT.png"
                   alt="Archana Transport Logo"
-                  className="w-12 h-12 object-contain"
+                  className="w-10 h-10 object-contain"
                 />
               </div>
               <div>
-                <span className="text-2xl font-bold">Archana Transport</span>
+                <span className="text-xl font-bold">Archana Transport</span>
                 <p className="text-gray-400 text-sm">
                   Industrial Material Transport Solutions
                 </p>
               </div>
             </div>
-            <p className="text-gray-300 mb-8 max-w-md text-lg leading-relaxed">
+            <p className="text-gray-300 mb-4 max-w-md text-base leading-normal">
               Looking for a transport partner you can rely on? <br />
               We specialize in industrial material and mining logistics,
               delivered with care and precision.
             </p>
-            <div className="flex space-x-6">
+            <div className="flex space-x-5">
               <a
                 href="https://www.facebook.com"
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-red-400 transition-colors"
               >
-                <Facebook size={24} />
+                <Facebook size={20} />
               </a>
               <a
                 href="https://x.com"
@@ -65,8 +65,8 @@ export default function TransportFooter() {
               >
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
-                  width="24"
-                  height="24"
+                  width="20"
+                  height="20"
                   fill="currentColor"
                   viewBox="0 0 24 24"
                 >
@@ -79,7 +79,7 @@ export default function TransportFooter() {
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-red-400 transition-colors"
               >
-                <Instagram size={24} />
+                <Instagram size={20} />
               </a>
               <a
                 href="https://www.linkedin.com"
@@ -87,19 +87,19 @@ export default function TransportFooter() {
                 rel="noopener noreferrer"
                 className="text-gray-400 hover:text-red-400 transition-colors"
               >
-                <Linkedin size={24} />
+                <Linkedin size={20} />
               </a>
             </div>
           </div>
 
-          {/* Quick Links (hidden on mobile) */}
+          {/* Quick Links */}
           <div className="hidden md:block">
-            <h3 className="text-xl font-bold mb-6">Quick Links</h3>
-            <ul className="space-y-4">
+            <h3 className="text-lg font-bold mb-4">Quick Links</h3>
+            <ul className="space-y-3">
               <li>
                 <button
                   onClick={() => scrollToSection("services")}
-                  className="text-gray-300 hover:text-white transition-colors text-lg"
+                  className="text-gray-300 hover:text-white transition-colors text-base"
                 >
                   Services
                 </button>
@@ -107,7 +107,7 @@ export default function TransportFooter() {
               <li>
                 <button
                   onClick={() => scrollToSection("gallery")}
-                  className="text-gray-300 hover:text-white transition-colors text-lg"
+                  className="text-gray-300 hover:text-white transition-colors text-base"
                 >
                   Gallery
                 </button>
@@ -115,7 +115,7 @@ export default function TransportFooter() {
               <li>
                 <button
                   onClick={() => scrollToSection("contact")}
-                  className="text-gray-300 hover:text-white transition-colors text-lg"
+                  className="text-gray-300 hover:text-white transition-colors text-base"
                 >
                   Contact
                 </button>
@@ -125,31 +125,31 @@ export default function TransportFooter() {
 
           {/* Contact Info */}
           <div>
-            <h3 className="text-xl font-bold mb-6">Contact Info</h3>
-            <div className="space-y-6">
+            <h3 className="text-lg font-bold mb-4">Contact Info</h3>
+            <div className="space-y-5">
               {/* Phone */}
-              <div className="flex items-start gap-4">
-                <Phone className="text-red-400 w-6 h-6 mt-[12px] shrink-0" />
-                <div className="text-gray-300 text-base">
+              <div className="flex items-start gap-3">
+                <Phone className="text-red-400 w-5 h-5 mt-[10px] shrink-0" />
+                <div className="text-gray-300 text-sm">
                   <p>+91 84580 35964</p>
                   <p>+91 78558 77317</p>
-                  <p className="text-gray-400 text-sm">24/7 Emergency</p>
+                  <p className="text-gray-400 text-xs">24/7 Emergency</p>
                 </div>
               </div>
 
               {/* Email */}
-              <div className="flex items-start gap-4">
-  <Mail className="text-red-400 w-6 h-6 mt-[10px] shrink-0" />
-  <div className="text-gray-300 text-base space-y-1 break-words w-fit max-w-full">
-    <p>info.at@archanagroups.in</p>
-    <p>archanatransportrgd@gmail.com</p>
-  </div>
-</div>
+              <div className="flex items-start gap-3">
+                <Mail className="text-red-400 w-5 h-5 mt-[10px] shrink-0" />
+                <div className="text-gray-300 text-sm space-y-1 break-words max-w-full">
+                  <p>info.at@archanagroups.in</p>
+                  <p>archanatransportrgd@gmail.com</p>
+                </div>
+              </div>
 
               {/* Address */}
-              <div className="flex items-start gap-4">
-                <MapPin className="text-red-400 w-6 h-6 mt-[22px] shrink-0" />
-                <p className="text-gray-300 text-base leading-relaxed break-words">
+              <div className="flex items-start gap-3">
+                <MapPin className="text-red-400 w-5 h-5 mt-[18px] shrink-0" />
+                <p className="text-gray-300 text-sm leading-normal break-words">
                   Gautam Nagar, 6th Lane,
                   <br />
                   Dig. Door No. 15,
@@ -161,9 +161,46 @@ export default function TransportFooter() {
           </div>
         </div>
 
-        <p className="text-center text-sm text-gray-400 mt-8">
-          © 2022 Archana Transport. All rights reserved.
-        </p>
+        {/* Footer Bottom */}
+        <div
+          className="border-t border-gray-800 mt-8 pt-4 text-center text-gray-400 text-sm"
+          id="footer-bottom"
+        >
+          <div className="flex flex-col md:flex-row justify-between items-center space-y-3 md:space-y-0">
+            <p className="transition-colors duration-300 hover:text-white">
+            &copy; 2025 Archana Transport, a unit of Archana Groups. All rights reserved. |
+
+              <span className="hover:text-red-400 cursor-pointer transition-colors duration-300 ml-1">
+                Privacy Policy
+              </span>{" "}
+              |
+              <span className="hover:text-yellow-400 cursor-pointer transition-colors duration-300 ml-1">
+                Terms & Conditions
+              </span>
+            </p>
+
+            <div className="flex items-center space-x-4 text-xs">
+              <div className="flex items-center space-x-2">
+                <div className="w-2.5 h-2.5 bg-red-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-500">On-Time Delivery</span>
+              </div>
+              <div className="flex items-center space-x-2">
+                <div className="w-2.5 h-2.5 bg-yellow-500 rounded-full animate-pulse"></div>
+                <span className="text-gray-500">Safety Assured</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Animated Banner */}
+          <div className="mt-6 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-red-600/20 via-black/30 to-red-600/20 animate-pulse rounded-full blur-xl"></div>
+            <div className="relative text-center py-2">
+              <p className="text-xs text-gray-300 font-medium">
+                🚛 Powered by Precision. Driven by Trust. 🚛
+              </p>
+            </div>
+          </div>
+        </div>
       </div>
     </footer>
   );

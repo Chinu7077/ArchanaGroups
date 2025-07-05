@@ -18,16 +18,21 @@ export default function TransportPage() {
   }, [])
 
   return (
-    <main className="min-h-screen bg-white">
+
+
+
+    <main className="min-h-screen bg-white scrollbar-red">
+
       <TransportNavigation />
       <TransportHero />
       <TransportServices />
      
-      <TransportWhyChoose />
+    <TransportWhyChoose />
       <TransportGallery />
       <TransportPartners />
       <TransportContact />
       <TransportFooter />
     </main>
+
   )
 }

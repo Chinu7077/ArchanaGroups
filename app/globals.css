@@ -2,6 +2,8 @@
 @tailwind components;
 @tailwind utilities;
 
+@import "keen-slider/keen-slider.min.css";
+/* ========== BASE LAYER ========== */
 @layer base {
   html {
     scroll-behavior: smooth;
@@ -12,6 +14,7 @@
   }
 }
 
+/* ========== UTILITIES ========== */
 @layer utilities {
   .animate-fade-in {
     animation: fadeIn 1.5s ease-in-out;
@@ -38,19 +41,36 @@
   }
 }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
+/* ========== PAGE-SPECIFIC SCROLLBARS ========== */
+
+/* 🔴 Transport Page Scrollbar */
+.scrollbar-transport::-webkit-scrollbar {
   width: 8px;
 }
-::-webkit-scrollbar-track {
-  background: #f1f1f1;
+.scrollbar-transport::-webkit-scrollbar-track {
+  background: #fef2f2; /* red-50 */
 }
-::-webkit-scrollbar-thumb {
-  background: #dc2626;
+.scrollbar-transport::-webkit-scrollbar-thumb {
+  background: #dc2626; /* red-600 */
   border-radius: 4px;
 }
-::-webkit-scrollbar-thumb:hover {
-  background: #b91c1c;
+.scrollbar-transport::-webkit-scrollbar-thumb:hover {
+  background: #b91c1c; /* red-700 */
+}
+
+/* 🟢 BioCycle Page Scrollbar */
+.scrollbar-bicycle::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-bicycle::-webkit-scrollbar-track {
+  background: #ecfdf5; /* green-50 */
+}
+.scrollbar-bicycle::-webkit-scrollbar-thumb {
+  background: #10b981; /* green-500 */
+  border-radius: 4px;
+}
+.scrollbar-bicycle::-webkit-scrollbar-thumb:hover {
+  background: #059669; /* green-600 */
 }
 
 /* Hide scrollbar globally where needed */
@@ -62,7 +82,35 @@
   display: none;
 }
 
-/* Smooth transitions for all interactive elements */
+/* ========== FOCUS OUTLINE (Scoped with :focus-visible) ========== */
+
+/* Remove default outline */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* ✅ Red outline on keyboard focus (Transport only) */
+.scrollbar-transport button:focus-visible,
+.scrollbar-transport a:focus-visible,
+.scrollbar-transport input:focus-visible,
+.scrollbar-transport textarea:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* ✅ Green outline on keyboard focus (BioCycle only) */
+.scrollbar-bicycle button:focus-visible,
+.scrollbar-bicycle a:focus-visible,
+.scrollbar-bicycle input:focus-visible,
+.scrollbar-bicycle textarea:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+/* ========== TRANSITIONS ========== */
 * {
   transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
     transform, filter, backdrop-filter;
@@ -70,7 +118,7 @@
   transition-duration: 200ms;
 }
 
-/* Mobile touch improvements */
+/* ========== MOBILE TOUCH TARGET ========== */
 @media (max-width: 768px) {
   button,
   a {
@@ -79,19 +127,12 @@
   }
 }
 
-/* Focus styles for accessibility */
-button:focus,
-a:focus,
-input:focus,
-textarea:focus {
-  outline: 2px solid #dc2626;
-  outline-offset: 2px;
-}
-
-/* Hover effects for better UX */
+/* ========== HOVER EFFECTS ========== */
 .hover-lift:hover {
   transform: translateY(-2px);
 }
+
+/* ========== COMPONENT LAYER ========== */
 @layer components {
   .navbar-blur {
     @apply bg-white/80 backdrop-blur-md shadow-md;
@@ -101,7 +142,19 @@ textarea:focus {
     @apply flex items-center gap-2 sm:gap-3;
   }
 }
+
+/* ========== NO SCROLL ========== */
 .no-scroll {
   overflow: hidden;
   height: 100vh;
 }
+@keyframes gentle-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.gentle-shake:hover {
+  animation: gentle-shake 0.4s ease-in-out;
+}
+

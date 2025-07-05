@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Menu, X } from "lucide-react";
+import { Menu, X, Home } from "lucide-react";
 import Link from "next/link";
 
 export default function TransportNavigation() {
@@ -12,7 +12,7 @@ export default function TransportNavigation() {
 
   const scrollToSection = (sectionId: string) => {
     const element = document.getElementById(sectionId);
-    const navbar = document.querySelector("nav"); // dynamically get nav
+    const navbar = document.querySelector("nav");
 
     if (element && navbar) {
       const navbarHeight = navbar.offsetHeight;
@@ -31,33 +31,29 @@ export default function TransportNavigation() {
     <nav className="bg-white shadow-lg border-b border-gray-200 sticky top-0 z-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-20">
-          {/* Left Side */}
+          {/* Left - Logo and Home */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6 }}
             className="flex items-center gap-2 sm:gap-4"
           >
-            {/* AG Brand Icon */}
-            <Link href="/">
+            <Link href="/" title="Home">
               <motion.div
+                className="p-3 bg-white rounded-md shadow-sm border border-gray-200 hover:bg-red-100 transition-colors duration-200"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
-                className="flex items-center justify-center transition-all duration-300"
+                transition={{
+                  type: "spring",
+                  stiffness: 400,
+                  damping: 17,
+                }}
               >
-                <div className="flex items-center">
-                  <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-indigo-600 bg-clip-text text-transparent mr-[-10px] sm:mr-[-12px]">
-                    A
-                  </div>
-                  <div className="text-4xl sm:text-5xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
-                    G
-                  </div>
-                </div>
+                <Home className="w-5 h-5 sm:w-6 sm:h-6 text-gray-700 hover:text-red-600 transition-colors duration-200" />
               </motion.div>
             </Link>
 
-            {/* AT Logo */}
-            <div className="w-20 h-20 sm:w-20 sm:h-20 flex items-center justify-center">
+            <div className="w-20 h-20 flex items-center justify-center">
               <img
                 src="/AT.png"
                 alt="Archana Transport Logo"
@@ -65,13 +61,12 @@ export default function TransportNavigation() {
               />
             </div>
 
-            {/* Company Name */}
             <span className="font-bold text-gray-800 text-xl sm:text-3xl">
               Archana Transport
             </span>
           </motion.div>
 
-          {/* Desktop Navigation */}
+          {/* Desktop Menu */}
           <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
@@ -98,13 +93,13 @@ export default function TransportNavigation() {
             </button>
             <button
               onClick={() => scrollToSection("contact")}
-              className="bg-red-600 text-white px-6 py-3 rounded-xl hover:bg-red-700 transition-colors font-semibold shadow-lg hover:shadow-xl"
+              className="text-gray-700 hover:text-red-600 transition-colors font-semibold"
             >
               Contact
             </button>
           </motion.div>
 
-          {/* Mobile Menu Button */}
+          {/* Mobile Menu Toggle Button */}
           <button
             onClick={toggleMenu}
             className="lg:hidden p-2 rounded-xl text-gray-700 hover:text-red-600 focus:outline-none"
@@ -113,7 +108,7 @@ export default function TransportNavigation() {
           </button>
         </div>
 
-        {/* Mobile Navigation */}
+        {/* Mobile Navigation Menu */}
         {isOpen && (
           <motion.div
             initial={{ opacity: 0, y: -20 }}

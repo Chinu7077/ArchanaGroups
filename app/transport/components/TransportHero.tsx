@@ -45,15 +45,13 @@ export default function TransportHero() {
             className="flex flex-col lg:flex-row lg:items-center lg:gap-4 flex-wrap text-black"
           >
             <h1 className="text-2xl sm:text-4xl lg:text-5xl font-bold leading-tight">
-              Industrial Vehicle Solutions
+            Industrial Waste Solutions
             </h1>
             <span className="text-xl sm:text-2xl lg:text-3xl font-semibold text-red-600">
               Bulkers, Dumpers & More
             </span>
             <p className="text-sm sm:text-base lg:text-lg leading-relaxed lg:ml-4 lg:mt-1 font-normal text-black">
-              Specialized in heavy industrial transport — reliable solutions for
-              bulk materials using high-capacity vehicles built for speed,
-              strength, and safety.
+            We provide end-to-end handling of Fly Ash and Red Mud through carefully planned, high-capacity logistics solutions — ensuring safe movement, environmental compliance, and operational efficiency at every step.
             </p>
           </motion.div>
 
