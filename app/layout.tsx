@@ -9,7 +9,7 @@ import "./globals.css"; // ✅ Your Tailwind or global CSS
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Archana Groups – Industrial Waste Handling & Biomass Fuel Production",
+  title: "Archana Groups – Industrial Waste Handling & BioFuel Production",
   description:
     "Welcome to Archana Groups of Companies – Your reliable partner in industrial waste handling, logistics, and biomass fuel production. We empower industries with clean, efficient, and sustainable solutions.",
   keywords:
