@@ -11,9 +11,9 @@ const inter = Inter({ subsets: ["latin"] });
 export const metadata: Metadata = {
   title: "Archana Groups – Industrial Waste Handling & Biomass Fuel Production",
   description:
-    "Gateway to Archana Transport and Archana BioCycle - Leading transport logistics and sustainable mobility solutions",
+    "Welcome to Archana Groups of Companies – Your reliable partner in industrial waste handling, logistics, and biomass fuel production. We empower industries with clean, efficient, and sustainable solutions.",
   keywords:
-    "transport, logistics, mining, sustainable mobility, eco-friendly, Archana Group",
+    "Archana Groups – Driving Industrial Transport with Care, Converting Waste into Clean Biomass Energy for a Sustainable Future.",
   generator: "v0.dev",
 };
 
