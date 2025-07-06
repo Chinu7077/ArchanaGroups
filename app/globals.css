@@ -158,3 +158,12 @@ textarea:focus {
   animation: gentle-shake 0.4s ease-in-out;
 }
 
+img {
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+video {
+  user-select: none;
+  pointer-events: none;
+}

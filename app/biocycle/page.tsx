@@ -102,7 +102,8 @@ export default function BiomassWebsite() {
   };
 
   return (
-    <div className="scrollbar-bicycle h-screen overflow-y-scroll">
+    <div className="scrollbar-bicycle h-screen overflow-y-scroll overflow-x-hidden">
+
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
         <BioCycleNavigation />
 

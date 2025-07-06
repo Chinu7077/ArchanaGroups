@@ -23,13 +23,13 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="en" className="scroll-smooth">
-  <head>
-    <link rel="icon" type="image/png" href="/AG.png" />
-  </head>
-  <body className={`${inter.className} antialiased bg-gray-50`}>
-    {children}
-  </body>
-</html>
+    <html lang="en" className="scroll-smooth overflow-x-hidden">
+      <head>
+        <link rel="icon" type="image/png" href="/AG.png" />
+      </head>
+      <body className={`${inter.className} antialiased bg-gray-50 overflow-x-hidden`}>
+        {children}
+      </body>
+    </html>
   );
 }
