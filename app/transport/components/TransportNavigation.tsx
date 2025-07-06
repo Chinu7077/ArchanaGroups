@@ -83,7 +83,7 @@ export default function TransportNavigation() {
               onClick={() => scrollToSection("partners")}
               className="text-gray-700 hover:text-red-600 transition-colors font-semibold"
             >
-              Partners
+            Clients
             </button>
             <button
               onClick={() => scrollToSection("gallery")}
