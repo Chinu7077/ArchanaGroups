@@ -22,7 +22,7 @@ export default function TransportHero() {
       <div
         className="absolute inset-0 z-0 bg-no-repeat bg-cover bg-top sm:hidden"
         style={{
-          backgroundImage: "url('/mp.png')",
+          backgroundImage: "url('/mp4.png')",
         }}
       />
 

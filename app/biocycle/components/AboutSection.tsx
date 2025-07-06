@@ -15,7 +15,7 @@ export default function AboutSection({
       color: "text-green-600",
     },
     {
-      value: "100+",
+      value: "50+",
       label: "TPD Production Capacity",
       color: "text-blue-600",
     },

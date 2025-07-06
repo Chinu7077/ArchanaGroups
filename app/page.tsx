@@ -94,7 +94,7 @@ export default function HomePage() {
             transition={{ duration: 0.8, delay: 1.2 }}
             className="text-sm sm:text-base md:text-xl text-gray-600 max-w-md sm:max-w-2xl mx-auto leading-relaxed text-center"
           >
-            From waste handling to BioFuel making we turn problems into solutions.
+            Dispose or Recycle: Complete Waste Management for Industry, Agriculture, and Biotech...
           </motion.p>
         </div>
       </motion.header>
