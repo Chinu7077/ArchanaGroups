@@ -1,8 +1,8 @@
-"use client"
+"use client";
 
-import { motion } from "framer-motion"
-import { Target, Heart, Award } from "lucide-react"
-import Image from "next/image"
+import { motion } from "framer-motion";
+import { Target, Heart, Award } from "lucide-react";
+import Image from "next/image";
 
 export default function TransportWhyChoose() {
   return (
@@ -15,60 +15,69 @@ export default function TransportWhyChoose() {
           viewport={{ once: false, amount: 0.3 }}
           className="text-center mb-16"
         >
-          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">Why Choose Archana Transport?</h2>
-          <p className="text-xl text-gray-600">Trusted for our commitment, chosen for our performance, and respected for our results.
+          <h2 className="text-4xl md:text-5xl font-bold text-gray-900 mb-6">
+            Why Choose Archana Transport?
+          </h2>
+          <p className="text-xl text-gray-600">
+            Trusted for our commitment, chosen for our performance, and
+            respected for our results.
+          </p>
+        </motion.div>
 
-</p>
-</motion.div>
+        {/* Founder Section */}
+        <motion.div
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.8 }}
+          viewport={{ once: false, amount: 0.3 }}
+          className="bg-white rounded-3xl p-10 shadow-xl mb-16 relative overflow-hidden"
+        >
+          {/* Soft blur background */}
+          <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-red-50 opacity-50"></div>
 
-{/* Founder Section */}
-<motion.div
-  initial={{ opacity: 0, y: 30 }}
-  whileInView={{ opacity: 1, y: 0 }}
-  transition={{ duration: 0.8 }}
-  viewport={{ once: false, amount: 0.3 }}
-  className="bg-white rounded-3xl p-10 shadow-xl mb-16 relative overflow-hidden"
->
-  {/* Soft blur background */}
-  <div className="absolute inset-0 bg-gradient-to-r from-gray-50 to-red-50 opacity-50"></div>
+          <div className="relative z-10">
+            <div className="flex items-center justify-center mb-8">
+              <Heart size={32} className="text-red-600 mr-4" />
+              <h3 className="text-2xl font-bold text-gray-900">
+                Message from Founder
+              </h3>
+            </div>
 
-  <div className="relative z-10">
-    <div className="flex items-center justify-center mb-8">
-      <Heart size={32} className="text-red-600 mr-4" />
-      <h3 className="text-2xl font-bold text-gray-900">Message from Founder</h3>
-    </div>
+            <div className="grid lg:grid-cols-2 gap-12 items-center">
+              {/* Founder Photo */}
+              <div className="flex justify-center">
+                <div className="text-center">
+                  <div className="w-32 h-32 rounded-full overflow-hidden mb-4 shadow-lg border-4 border-white">
+                    <Image
+                      src="/placeholder.svg?height=128&width=128"
+                      alt="Founder"
+                      width={128}
+                      height={128}
+                      className="w-full h-full object-cover"
+                    />
+                  </div>
+                  <p className="font-semibold text-gray-800">TULASI DAS</p>
+                  <p className="text-sm text-gray-600">Managing Director</p>
+                </div>
+              </div>
 
-    <div className="grid lg:grid-cols-2 gap-12 items-center">
-      {/* Founder Photo */}
-      <div className="flex justify-center">
-        <div className="text-center">
-          <div className="w-32 h-32 rounded-full overflow-hidden mb-4 shadow-lg border-4 border-white">
-            <Image
-              src="/placeholder.svg?height=128&width=128"
-              alt="Founder"
-              width={128}
-              height={128}
-              className="w-full h-full object-cover"
-            />
+              {/* Message */}
+              <div>
+                <blockquote className="text-gray-700 text-lg leading-relaxed italic mb-6">
+                  "When I started Archana Transport, my goal was simple — to
+                  bring honesty, structure, and accountability to industrial
+                  logistics. Today, we proudly partner with businesses that
+                  share our values — efficiency, safety, and trust. Because at
+                  the end of the day, we’re not just moving materials. We’re
+                  moving reputations."
+                </blockquote>
+                <p className="text-gray-800 font-bold text-lg">
+                  – Founder, Archana Transport
+                </p>
+              </div>
+            </div>
           </div>
-          <p className="font-semibold text-gray-800">TULASI DAS</p>
-          <p className="text-sm text-gray-600">Managing Director</p>
-        </div>
-      </div>
-
-      {/* Message */}
-      <div>
-        <blockquote className="text-gray-700 text-lg leading-relaxed italic mb-6">
-          "At Archana Transport, our goal is simple — to deliver every load with honesty, safety, and care. 
-          We treat every client with respect and every material as if it were our own. 
-          This journey isn’t just about transport; it’s about trust, commitment, and long-term relationships."
-        </blockquote>
-        <p className="text-gray-800 font-bold text-lg">– Founder, Archana Transport</p>
-      </div>
-    </div>
-  </div>
-</motion.div>
-
+        </motion.div>
 
         {/* Mission Statement */}
         <motion.div
@@ -85,8 +94,10 @@ export default function TransportWhyChoose() {
           <div className="grid md:grid-cols-2 gap-8">
             <div>
               <p className="text-gray-700 text-lg leading-relaxed mb-6">
-                To provide safe, reliable, and efficient transportation solutions that enable our clients' success while
-                maintaining the highest standards of professionalism and environmental responsibility.
+                To provide safe, reliable, and efficient transportation
+                solutions that enable our clients' success while maintaining the
+                highest standards of professionalism and environmental
+                responsibility.
               </p>
             </div>
             <div>
@@ -122,7 +133,9 @@ export default function TransportWhyChoose() {
         >
           <div className="flex items-center mb-8">
             <Award size={32} className="text-red-600 mr-4" />
-            <h3 className="text-2xl font-bold text-gray-900">Our Commitment to Excellence</h3>
+            <h3 className="text-2xl font-bold text-gray-900">
+              Our Commitment to Excellence
+            </h3>
           </div>
           <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
             {[
@@ -149,5 +162,5 @@ export default function TransportWhyChoose() {
         </motion.div>
       </div>
     </section>
-  )
+  );
 }
