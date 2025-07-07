@@ -1,6 +1,8 @@
 "use client";
 
 import { useEffect, useState, useRef } from "react";
+import Head from "next/head"; // ✅ Added for SEO
+
 import BioCycleNavigation from "./components/BioCycleNavigation";
 import HeroSection from "./components/HeroSection";
 import SustainabilitySection from "./components/SustainabilitySection";
@@ -14,16 +16,13 @@ import BiomassProcess from "./components/BiomassProcess";
 import Contact from "./components/contact";
 import BioCycleFooter from "./components/BioCycleFooter";
 
-
 export default function BiomassWebsite() {
   const [visibleElements, setVisibleElements] = useState(new Set());
   const observerRef = useRef<IntersectionObserver | null>(null);
 
   useEffect(() => {
-    // Scroll to top on page load
     window.scrollTo({ top: 0, behavior: "instant" });
 
-    // Create intersection observer for scroll animations
     observerRef.current = new IntersectionObserver(
       (entries) => {
         entries.forEach((entry) => {
@@ -31,21 +30,20 @@ export default function BiomassWebsite() {
           setVisibleElements((prev) => {
             const updated = new Set(prev);
             if (entry.isIntersecting) {
-              updated.add(id); // add when in view
+              updated.add(id);
             } else {
-              updated.delete(id); // remove when out of view
+              updated.delete(id);
             }
             return updated;
           });
         });
       },
       {
-        threshold: 0.25, // adjust for smoother timing
+        threshold: 0.25,
         rootMargin: "0px",
       }
     );
 
-    // Observe all elements with data-animate
     const animatedElements = document.querySelectorAll("[data-animate]");
     animatedElements.forEach((el) => {
       if (observerRef.current) {
@@ -103,15 +101,39 @@ export default function BiomassWebsite() {
 
   return (
     <div className="scrollbar-bicycle h-screen overflow-y-scroll overflow-x-hidden">
+      {/* ✅ SEO Head Meta Tags */}
+      <Head>
+        <title>Archana BioCycle | Clean Fuel & Red Mud Transport in Odisha</title>
+        <meta
+          name="description"
+          content="Archana BioCycle specializes in biomass briquettes, fly ash, and red mud transportation across Odisha including Koraput, Rayagada, and nearby districts."
+        />
+        <meta
+          name="keywords"
+          content="Biomass in Odisha, Red Mud Transport, Fly Ash Transport, Agricultural Waste to Fuel, Archana Groups, Koraput, Rayagada"
+        />
+        <meta name="author" content="Archana BioCycle" />
+        <meta
+          property="og:title"
+          content="Archana BioCycle - Odisha's Clean Fuel Partner"
+        />
+        <meta
+          property="og:description"
+          content="Trusted partner for industrial biomass and residue transport in Odisha."
+        />
+        <meta property="og:image" content="/favicon.png" />
+        <meta property="og:url" content="https://archanagroups.in" />
+        <meta name="robots" content="index, follow" />
+        <link rel="canonical" href="https://archanagroups.in" />
+        <link rel="icon" href="/favicon.png" type="image/png" />
+      </Head>
 
       <div className="min-h-screen bg-gradient-to-br from-green-50 to-white">
         <BioCycleNavigation />
-
         <HeroSection
           getAnimationClass={getAnimationClass}
           scrollToSection={scrollToSection}
         />
-
         <SustainabilitySection getAnimationClass={getAnimationClass} />
         <CleanEnergySection getAnimationClass={getAnimationClass} />
         <ProductSpecifications getAnimationClass={getAnimationClass} />

@@ -24,7 +24,7 @@ export default function RootLayout({
     <html lang="en" className="scroll-smooth overflow-x-hidden">
       <head>
         {/* ✅ Favicon */}
-        <link rel="icon" type="image/png" href="/AG.png" />
+        <link rel="icon" type="image/png" href="/favicon-32x32.png" />
 
         {/* ✅ SEO Keywords */}
         <meta
