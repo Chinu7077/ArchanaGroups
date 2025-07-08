@@ -9,12 +9,11 @@ import type React from "react";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "Archana Groups – Fly Ash Transport & Biomass Fuel in Odisha",
+  title: "Archana Groups – Biomass Fuel & Industrial Waste Handling in Odisha",
   description:
-    "Archana Groups provides industrial transport services for fly ash, red mud, and bulk materials across Odisha. Archana BioCycle converts agricultural waste into biomass briquettes and clean biofuel.",
+    "Welcome to Archana Groups – We produce biomass fuel from agricultural waste and handle industrial by-products like fly ash and red mud across Odisha.",
   generator: "v0.dev",
 };
-
 export default function RootLayout({
   children,
 }: {
@@ -31,12 +30,14 @@ export default function RootLayout({
           name="keywords"
           content="Fly ash transport Odisha, red mud logistics Jharsuguda, biomass briquettes supplier, biofuel company Odisha, Archana Transport, Archana BioCycle, Hyva bulkers, sustainable fuel"
         />
-        
+
         {/* ✅ Author & Robots */}
         <meta name="author" content="Archana Groups" />
         <meta name="robots" content="index, follow" />
       </head>
-      <body className={`${inter.className} antialiased bg-gray-50 overflow-x-hidden`}>
+      <body
+        className={`${inter.className} antialiased bg-gray-50 overflow-x-hidden`}
+      >
         {children}
       </body>
     </html>
