@@ -4,7 +4,14 @@ module.exports = {
   generateRobotsTxt: true,
   generateIndexSitemap: true,
   outDir: './public',
-  // 👇 Manual static route list (add your actual pages here)
+  transform: async (config, path) => {
+    return {
+      loc: path,
+      changefreq: 'daily',
+      priority: 0.7,
+      lastmod: new Date().toISOString(),
+    };
+  },
   additionalPaths: async (config) => [
     await config.transform(config, '/'),
     await config.transform(config, '/transport'),
