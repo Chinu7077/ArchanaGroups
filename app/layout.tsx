@@ -24,31 +24,21 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "Archana Groups" }],
   robots: "index, follow",
-  generator: "v0.dev",
+  generator: "Next.js",
   metadataBase: new URL("https://archanagroups.in"),
   openGraph: {
-    title: "Archana Groups – Sustainable Mobility Solutions",
+    title: "Archana Groups – Biomass Fuel & Industrial Waste Handling in Odisha",
     description:
-      "We help move the world sustainably by transporting industrial by-products and producing biofuel from agricultural waste.",
+      "Welcome to Archana Groups – We produce biomass fuel from agricultural waste and handle industrial by-products like fly ash and red mud across Odisha.",
     url: "https://archanagroups.in",
     siteName: "Archana Groups",
-    images: [
-      {
-        url: "/og-cover.jpg", // Upload this image to your /public folder
-        width: 1200,
-        height: 630,
-        alt: "Archana Groups OG Banner",
-      },
-    ],
     type: "website",
   },
   twitter: {
-    card: "summary_large_image",
-    title: "Archana Groups – Sustainable Mobility Solutions",
+    card: "summary",
+    title: "Archana Groups – Biomass Fuel & Industrial Waste Handling in Odisha",
     description:
-      "Transport, biomass fuel, fly ash and red mud handling with clean mobility.",
-    images: ["/og-cover.jpg"],
-    creator: "@archanagroups", // Optional
+      "Welcome to Archana Groups – We produce biomass fuel from agricultural waste and handle industrial by-products like fly ash and red mud across Odisha.",
   },
   icons: {
     icon: "/favicon-32x32.png",
