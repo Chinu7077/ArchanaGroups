@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -100,7 +101,8 @@ type PartnerSummary = {
 };
 
 const AdminDashboard = () => {
-  const [activeTab, setActiveTab] = useState('overview');
+  const searchParams = useSearchParams();
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [showAddPartnerDialog, setShowAddPartnerDialog] = useState(false);
   const [dispatchFile, setDispatchFile] = useState<File | null>(null);
   const [dieselFile, setDieselFile] = useState<File | null>(null);
@@ -211,10 +213,26 @@ const AdminDashboard = () => {
     },
   });
 
+  const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
+      // Clear all auth-related queries from cache
+      utils.auth.getUser.reset();
+      utils.invalidate();
       toast.success('You have been securely logged out');
-      router.push('/');
+      // Use replace and add small delay to ensure server session is cleared
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
+    },
+    onError: () => {
+      // Even if logout fails on server, clear local state
+      utils.auth.getUser.reset();
+      utils.invalidate();
+      toast.error('Logout failed, but local session cleared');
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
     },
   });
 
@@ -365,31 +383,41 @@ const AdminDashboard = () => {
     } catch (error) {}
   };
 
-  const handleDownloadCredentials = () => {
+  const handleDownloadCredentials = async () => {
     if (!partners || partners.length === 0) {
       toast.error('There are no partners to export');
       return;
     }
 
-    const csvContent =
-      'Partner Name,Partner ID,Password,Created Date\n' +
-      partners
-        .map((partner: PartnerSummary) => {
-          const password =
-            temporaryPasswords[partner.id] || '[Reset password to export]';
-          return `${partner.name},${partner.partnerId},${password},${new Date(partner.createdAt).toLocaleDateString()}`;
-        })
-        .join('\n');
+    const XLSX = await import('xlsx');
+    
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    
+    // Prepare data for worksheet
+    const worksheetData = [];
+    worksheetData.push(['Partner Name', 'Partner ID', 'Password', 'Created Date']);
+    
+    partners.forEach((partner: PartnerSummary) => {
+      const password = temporaryPasswords[partner.id] || '[Reset password to export]';
+      worksheetData.push([
+        partner.name,
+        partner.partnerId,
+        password,
+        new Date(partner.createdAt).toLocaleDateString()
+      ]);
+    });
+    
+    // Create worksheet
+    const worksheet = XLSX.utils.aoa_to_sheet(worksheetData);
+    
+    // Add worksheet to workbook
+    XLSX.utils.book_append_sheet(workbook, worksheet, 'Partner Credentials');
+    
+    // Download the Excel file
+    XLSX.writeFile(workbook, 'partner_credentials.xlsx');
 
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'partner_credentials.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    toast.success('Partner credentials exported to CSV file');
+    toast.success('Partner credentials exported to Excel file');
   };
 
   // Redirect if not authenticated or not admin
@@ -463,7 +491,12 @@ const AdminDashboard = () => {
         {/* Main Content */}
         <Tabs
           value={activeTab}
-          onValueChange={setActiveTab}
+          onValueChange={(value) => {
+            setActiveTab(value);
+            const url = new URL(window.location.href);
+            url.searchParams.set('tab', value);
+            router.replace(url.pathname + url.search);
+          }}
           className="space-y-6"
         >
           <TabsList className="grid w-full grid-cols-3">

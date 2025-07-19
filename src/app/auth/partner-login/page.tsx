@@ -73,10 +73,15 @@ export default function PartnerLoginPage() {
     }
   }, [checkAuthQuery.data, router]);
 
+  const utils = trpc.useUtils();
   const loginMutation = trpc.auth.partnerLogin.useMutation({
     onSuccess: (data) => {
       toast.success(`Welcome back, ${data.user?.name || 'Partner'}`);
-      router.push('/partner/dashboard');
+      // Invalidate auth queries to update state immediately
+      utils.auth.getUser.invalidate();
+      utils.auth.checkAuth.invalidate();
+      // Use replace to prevent back navigation to login
+      router.replace('/partner/dashboard');
     },
     onError: (error) => {
       toast.error(`Login failed: ${error.message}`);

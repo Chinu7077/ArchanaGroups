@@ -74,14 +74,20 @@ export const authRouter = router({
     return { success: true };
   }),
 
-  // Get current user
-  getUser: protectedProcedure.query(async ({ ctx }) => {
+  // Get current user (public procedure to avoid 401 errors)
+  getUser: publicProcedure.query(async () => {
+    const session = await verifySession();
+    
+    if (!session) {
+      return null;
+    }
+    
     return {
-      id: ctx.session.userId,
-      role: ctx.session.role,
-      partnerId: ctx.session.partnerId,
-      username: ctx.session.username,
-      name: ctx.session.name,
+      id: session.userId,
+      role: session.role,
+      partnerId: session.partnerId,
+      username: session.username,
+      name: session.name,
     };
   }),
 

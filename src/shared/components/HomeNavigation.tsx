@@ -1,14 +1,38 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { Menu, X, Shield, Truck } from 'lucide-react';
+import { Menu, X, Shield, Truck, LayoutDashboard } from 'lucide-react';
 import { Button } from '@/shared/components/ui/button';
+import { trpc } from '@/config/trpc/client';
 
 export default function HomeNavigation() {
   const [isOpen, setIsOpen] = useState(false);
+  const { data: user, isLoading, refetch } = trpc.auth.getUser.useQuery(
+    undefined,
+    {
+      retry: false,
+      refetchOnWindowFocus: true,
+      staleTime: 0,
+    }
+  );
+
+  // Refetch user data when navigating back to home
+  useEffect(() => {
+    const handleFocus = () => {
+      refetch();
+    };
+    
+    window.addEventListener('focus', handleFocus);
+    return () => window.removeEventListener('focus', handleFocus);
+  }, [refetch]);
 
   const toggleMenu = () => setIsOpen(!isOpen);
+
+  const getDashboardRoute = () => {
+    if (!user) return '/';
+    return user.role === 'admin' ? '/admin/dashboard' : '/partner/dashboard';
+  };
 
   return (
     <nav className="sticky top-0 z-50 bg-white shadow-lg">
@@ -39,36 +63,55 @@ export default function HomeNavigation() {
               Archana BioCycle
             </Link>
 
-            {/* Login Buttons */}
+            {/* Login/Dashboard Buttons */}
             <div className="flex items-center space-x-3">
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
-              >
-                <Link
-                  href="/auth/partner-login"
-                  className="flex items-center space-x-1"
+              {!isLoading && user ? (
+                <Button
+                  asChild
+                  variant="outline"
+                  size="sm"
+                  className="border-green-600 text-green-600 hover:bg-green-600 hover:text-white"
                 >
-                  <Truck className="h-4 w-4" />
-                  <span>Partner</span>
-                </Link>
-              </Button>
-              <Button
-                asChild
-                variant="outline"
-                size="sm"
-                className="border-slate-600 text-slate-600 hover:bg-slate-600 hover:text-white"
-              >
-                <Link
-                  href="/auth/admin-login"
-                  className="flex items-center space-x-1"
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Admin</span>
-                </Link>
-              </Button>
+                  <Link
+                    href={getDashboardRoute()}
+                    className="flex items-center space-x-1"
+                  >
+                    <LayoutDashboard className="h-4 w-4" />
+                    <span>Go to Dashboard</span>
+                  </Link>
+                </Button>
+              ) : (
+                <>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white"
+                  >
+                    <Link
+                      href="/auth/partner-login"
+                      className="flex items-center space-x-1"
+                    >
+                      <Truck className="h-4 w-4" />
+                      <span>Partner</span>
+                    </Link>
+                  </Button>
+                  <Button
+                    asChild
+                    variant="outline"
+                    size="sm"
+                    className="border-slate-600 text-slate-600 hover:bg-slate-600 hover:text-white"
+                  >
+                    <Link
+                      href="/auth/admin-login"
+                      className="flex items-center space-x-1"
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span>Admin</span>
+                    </Link>
+                  </Button>
+                </>
+              )}
             </div>
           </div>
 
@@ -100,29 +143,49 @@ export default function HomeNavigation() {
                 Archana BioCycle
               </Link>
 
-              {/* Mobile Login Options */}
+              {/* Mobile Login/Dashboard Options */}
               <div className="mt-2 border-t pt-2">
-                <div className="px-3 pb-2">
-                  <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
-                    Login
-                  </p>
-                </div>
-                <Link
-                  href="/auth/partner-login"
-                  className="flex items-center space-x-2 px-3 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-50"
-                  onClick={toggleMenu}
-                >
-                  <Truck className="h-4 w-4" />
-                  <span>Partner Login</span>
-                </Link>
-                <Link
-                  href="/auth/admin-login"
-                  className="flex items-center space-x-2 px-3 py-3 font-medium text-slate-600 transition-colors hover:bg-slate-50"
-                  onClick={toggleMenu}
-                >
-                  <Shield className="h-4 w-4" />
-                  <span>Admin Login</span>
-                </Link>
+                {!isLoading && user ? (
+                  <>
+                    <div className="px-3 pb-2">
+                      <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                        Dashboard
+                      </p>
+                    </div>
+                    <Link
+                      href={getDashboardRoute()}
+                      className="flex items-center space-x-2 px-3 py-3 font-medium text-green-600 transition-colors hover:bg-green-50"
+                      onClick={toggleMenu}
+                    >
+                      <LayoutDashboard className="h-4 w-4" />
+                      <span>Go to Dashboard</span>
+                    </Link>
+                  </>
+                ) : (
+                  <>
+                    <div className="px-3 pb-2">
+                      <p className="text-xs font-semibold tracking-wide text-gray-500 uppercase">
+                        Login
+                      </p>
+                    </div>
+                    <Link
+                      href="/auth/partner-login"
+                      className="flex items-center space-x-2 px-3 py-3 font-medium text-blue-600 transition-colors hover:bg-blue-50"
+                      onClick={toggleMenu}
+                    >
+                      <Truck className="h-4 w-4" />
+                      <span>Partner Login</span>
+                    </Link>
+                    <Link
+                      href="/auth/admin-login"
+                      className="flex items-center space-x-2 px-3 py-3 font-medium text-slate-600 transition-colors hover:bg-slate-50"
+                      onClick={toggleMenu}
+                    >
+                      <Shield className="h-4 w-4" />
+                      <span>Admin Login</span>
+                    </Link>
+                  </>
+                )}
               </div>
             </div>
           </div>

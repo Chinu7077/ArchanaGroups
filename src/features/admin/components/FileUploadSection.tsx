@@ -229,8 +229,7 @@ export function FileUploadSection({
                 {file.file.name}
               </p>
               <p className="mt-1 text-xs text-gray-500">
-                {(file.file.size / (1024 * 1024)).toFixed(2)} MB •{' '}
-                {file.file.type.includes('sheet') ? 'Excel' : 'CSV'}
+                {(file.file.size / (1024 * 1024)).toFixed(2)} MB • Excel
               </p>
               {file.error && (
                 <p className="mt-2 text-xs font-medium text-red-600">
@@ -330,14 +329,14 @@ export function FileUploadSection({
             type="dispatch"
             file={dispatchFile}
             title="Dispatch Data"
-            description="Excel or CSV files with dispatch information"
+            description="Excel files with dispatch information"
           />
 
           <FileUploadArea
             type="diesel"
             file={dieselFile}
             title="Diesel Data"
-            description="Excel or CSV files with fuel consumption data"
+            description="Excel files with fuel consumption data"
           />
         </div>
 

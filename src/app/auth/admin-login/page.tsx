@@ -73,10 +73,15 @@ export default function AdminLoginPage() {
     }
   }, [checkAuthQuery.data, router]);
 
+  const utils = trpc.useUtils();
   const loginMutation = trpc.auth.adminLogin.useMutation({
     onSuccess: (data) => {
       toast.success(`Welcome back, ${data.user?.username || 'Admin'}`);
-      router.push('/admin/dashboard');
+      // Invalidate auth queries to update state immediately
+      utils.auth.getUser.invalidate();
+      utils.auth.checkAuth.invalidate();
+      // Use replace to prevent back navigation to login
+      router.replace('/admin/dashboard');
     },
     onError: (error) => {
       toast.error(`Login failed: ${error.message}`);

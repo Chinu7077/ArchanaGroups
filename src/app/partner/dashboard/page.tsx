@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useSearchParams } from 'next/navigation';
 import {
   Card,
   CardContent,
@@ -49,10 +50,11 @@ import { trpc } from '@/config/trpc/client';
 import { toast } from 'sonner';
 
 const PartnerDashboard = () => {
+  const searchParams = useSearchParams();
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dateFilter, setDateFilter] = useState<'1-15' | '16-31' | 'all'>('all');
-  const [activeTab, setActiveTab] = useState('dispatch');
+  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dispatch');
   const router = useRouter();
 
   // Get current user
@@ -83,10 +85,26 @@ const PartnerDashboard = () => {
     });
 
   // Logout mutation
+  const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
+      // Clear all auth-related queries from cache
+      utils.auth.getUser.reset();
+      utils.invalidate();
       toast.success('You have been securely logged out');
-      router.push('/');
+      // Use replace and add small delay to ensure server session is cleared
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
+    },
+    onError: () => {
+      // Even if logout fails on server, clear local state
+      utils.auth.getUser.reset();
+      utils.invalidate();
+      toast.error('Logout failed, but local session cleared');
+      setTimeout(() => {
+        router.replace('/');
+      }, 100);
     },
   });
 
@@ -94,40 +112,67 @@ const PartnerDashboard = () => {
     logoutMutation.mutate();
   };
 
-  const handleDownloadExcel = () => {
-    // Create CSV content
-    let csvContent =
-      'Type,Date,Vehicle No,Material/Item,Quantity/Volume,Unit,Destination/Fuel Station,Status\n';
-
-    // Add dispatch data
-    if (dispatchData?.data) {
-      dispatchData.data.forEach((item) => {
-        csvContent += `Dispatch,${new Date(item.date).toLocaleDateString()},${
-          item.vehicleNumber
-        },${item.material},${item.quantity},T,${item.destination},Completed\n`;
-      });
+  const handleDownloadExcel = async () => {
+    const XLSX = await import('xlsx');
+    
+    // Create workbook
+    const workbook = XLSX.utils.book_new();
+    
+    if (activeTab === 'dispatch') {
+      // Prepare dispatch data
+      const dispatchWorksheetData = [];
+      dispatchWorksheetData.push(['Date', 'Vehicle No', 'Material', 'Quantity', 'Unit', 'Destination', 'Status']);
+      
+      if (dispatchData?.data) {
+        dispatchData.data.forEach((item) => {
+          dispatchWorksheetData.push([
+            new Date(item.date).toLocaleDateString(),
+            item.vehicleNumber,
+            item.material,
+            item.quantity,
+            'T',
+            item.destination,
+            'Completed'
+          ]);
+        });
+      }
+      
+      // Create worksheet and add to workbook
+      const dispatchWorksheet = XLSX.utils.aoa_to_sheet(dispatchWorksheetData);
+      XLSX.utils.book_append_sheet(workbook, dispatchWorksheet, 'Dispatch Data');
+      
+      // Download the Excel file
+      XLSX.writeFile(workbook, `dispatch_data_${selectedMonth}_${selectedYear}.xlsx`);
+      
+      toast.success('Dispatch data Excel file has been downloaded');
+    } else if (activeTab === 'diesel') {
+      // Prepare diesel data
+      const dieselWorksheetData = [];
+      dieselWorksheetData.push(['Date', 'Vehicle No', 'Item', 'Volume', 'Unit', 'Fuel Station', 'Status']);
+      
+      if (dieselData?.data) {
+        dieselData.data.forEach((item) => {
+          dieselWorksheetData.push([
+            new Date(item.date).toLocaleDateString(),
+            item.vehicleNumber,
+            item.item,
+            item.volume,
+            'L',
+            item.fuelStation,
+            item.status
+          ]);
+        });
+      }
+      
+      // Create worksheet and add to workbook
+      const dieselWorksheet = XLSX.utils.aoa_to_sheet(dieselWorksheetData);
+      XLSX.utils.book_append_sheet(workbook, dieselWorksheet, 'Diesel Data');
+      
+      // Download the Excel file
+      XLSX.writeFile(workbook, `diesel_data_${selectedMonth}_${selectedYear}.xlsx`);
+      
+      toast.success('Diesel data Excel file has been downloaded');
     }
-
-    // Add diesel data
-    if (dieselData?.data) {
-      dieselData.data.forEach((item) => {
-        csvContent += `Diesel,${new Date(item.date).toLocaleDateString()},${
-          item.vehicleNumber
-        },${item.item},${item.volume},L,${item.fuelStation},${item.status}\n`;
-      });
-    }
-
-    const blob = new Blob([csvContent], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `transport_data_${selectedMonth}_${selectedYear}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-
-    toast.success(
-      'Excel file with dispatch and diesel data has been downloaded'
-    );
   };
 
   // Redirect if not authenticated
@@ -147,6 +192,8 @@ const PartnerDashboard = () => {
       </div>
     );
   }
+
+  console.log(user);
 
   return (
     <div className="bg-background min-h-screen">
@@ -354,7 +401,12 @@ const PartnerDashboard = () => {
             <CardContent>
               <Tabs
                 value={activeTab}
-                onValueChange={setActiveTab}
+                onValueChange={(value) => {
+                  setActiveTab(value);
+                  const url = new URL(window.location.href);
+                  url.searchParams.set('tab', value);
+                  router.replace(url.pathname + url.search);
+                }}
                 className="w-full"
               >
                 <TabsList className="grid w-full grid-cols-2">
