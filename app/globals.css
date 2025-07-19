@@ -1,0 +1,169 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import "keen-slider/keen-slider.min.css";
+/* ========== BASE LAYER ========== */
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    font-family: "Inter", sans-serif;
+  }
+}
+
+/* ========== UTILITIES ========== */
+@layer utilities {
+  .animate-fade-in {
+    animation: fadeIn 1.5s ease-in-out;
+  }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes scroll {
+  0% {
+    transform: translateX(0);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+/* ========== PAGE-SPECIFIC SCROLLBARS ========== */
+
+/* 🔴 Transport Page Scrollbar */
+.scrollbar-transport::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-transport::-webkit-scrollbar-track {
+  background: #fef2f2; /* red-50 */
+}
+.scrollbar-transport::-webkit-scrollbar-thumb {
+  background: #dc2626; /* red-600 */
+  border-radius: 4px;
+}
+.scrollbar-transport::-webkit-scrollbar-thumb:hover {
+  background: #b91c1c; /* red-700 */
+}
+
+/* 🟢 BioCycle Page Scrollbar */
+.scrollbar-bicycle::-webkit-scrollbar {
+  width: 8px;
+}
+.scrollbar-bicycle::-webkit-scrollbar-track {
+  background: #ecfdf5; /* green-50 */
+}
+.scrollbar-bicycle::-webkit-scrollbar-thumb {
+  background: #10b981; /* green-500 */
+  border-radius: 4px;
+}
+.scrollbar-bicycle::-webkit-scrollbar-thumb:hover {
+  background: #059669; /* green-600 */
+}
+
+/* Hide scrollbar globally where needed */
+.scrollbar-hide {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}
+
+/* ========== FOCUS OUTLINE (Scoped with :focus-visible) ========== */
+
+/* Remove default outline */
+button:focus,
+a:focus,
+input:focus,
+textarea:focus {
+  outline: none;
+}
+
+/* ✅ Red outline on keyboard focus (Transport only) */
+.scrollbar-transport button:focus-visible,
+.scrollbar-transport a:focus-visible,
+.scrollbar-transport input:focus-visible,
+.scrollbar-transport textarea:focus-visible {
+  outline: 2px solid #dc2626;
+  outline-offset: 2px;
+}
+
+/* ✅ Green outline on keyboard focus (BioCycle only) */
+.scrollbar-bicycle button:focus-visible,
+.scrollbar-bicycle a:focus-visible,
+.scrollbar-bicycle input:focus-visible,
+.scrollbar-bicycle textarea:focus-visible {
+  outline: 2px solid #10b981;
+  outline-offset: 2px;
+}
+
+/* ========== TRANSITIONS ========== */
+* {
+  transition-property: color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow,
+    transform, filter, backdrop-filter;
+  transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
+  transition-duration: 200ms;
+}
+
+/* ========== MOBILE TOUCH TARGET ========== */
+@media (max-width: 768px) {
+  button,
+  a {
+    min-height: 44px;
+    min-width: 44px;
+  }
+}
+
+/* ========== HOVER EFFECTS ========== */
+.hover-lift:hover {
+  transform: translateY(-2px);
+}
+
+/* ========== COMPONENT LAYER ========== */
+@layer components {
+  .navbar-blur {
+    @apply bg-white/80 backdrop-blur-md shadow-md;
+  }
+
+  .logo-container {
+    @apply flex items-center gap-2 sm:gap-3;
+  }
+}
+
+/* ========== NO SCROLL ========== */
+.no-scroll {
+  overflow: hidden;
+  height: 100vh;
+}
+@keyframes gentle-shake {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-2px); }
+  75% { transform: translateX(2px); }
+}
+
+.gentle-shake:hover {
+  animation: gentle-shake 0.4s ease-in-out;
+}
+
+img {
+  user-select: none;
+  pointer-events: none;
+  -webkit-user-drag: none;
+}
+video {
+  user-select: none;
+  pointer-events: none;
+}
