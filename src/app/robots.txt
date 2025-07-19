@@ -1,0 +1,17 @@
+User-agent: *
+Allow: /
+
+# Disallow admin and auth pages
+Disallow: /admin/
+Disallow: /auth/
+Disallow: /api/
+
+# Allow specific public pages
+Allow: /transport
+Allow: /biocycle
+
+# Sitemap location
+Sitemap: https://archanagroups.in/sitemap.xml
+
+# Crawl delay (optional)
+Crawl-delay: 1
