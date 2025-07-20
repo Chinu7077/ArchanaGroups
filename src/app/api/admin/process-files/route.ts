@@ -77,11 +77,12 @@ export async function POST(req: NextRequest) {
     // Create a map to store vehicle-to-partner mapping from current dispatch file processing
     const vehiclePartnerMap = new Map<string, string>();
 
-    // Pre-validate diesel file if provided (now using owner name instead of vehicle validation)
+    // Pre-validate diesel file if provided (now automatically creates partners for new owners)
     if (dieselFile) {
-      console.log('Pre-validating diesel file for owner name matches');
+      console.log('Pre-validating diesel file and creating missing partners');
       const dieselRows = await parseXlsxFileContent(dieselFile);
-      const unmatchedOwners: string[] = [];
+      const newOwners: string[] = [];
+      const existingOwners: string[] = [];
 
       // Check all diesel owner names against database
       for (let i = 1; i < dieselRows.length; i++) {
@@ -97,23 +98,57 @@ export async function POST(req: NextRequest) {
         });
 
         if (!existingPartner) {
-          unmatchedOwners.push(ownerName.trim());
+          newOwners.push(ownerName.trim());
+        } else {
+          existingOwners.push(ownerName.trim());
         }
       }
 
-      // If any unmatched owners found, return error immediately
-      if (unmatchedOwners.length > 0) {
-        const uniqueOwners = [...new Set(unmatchedOwners)];
-        return NextResponse.json(
-          {
-            success: false,
-            error: 'Diesel data validation failed',
-            unmatchedOwners: uniqueOwners,
-            message: `Cannot process diesel data: ${uniqueOwners.length} owner(s) not found in database. Please ensure these owners have dispatch data uploaded first: ${uniqueOwners.join(', ')}`,
-          },
-          { status: 400 }
-        );
+      // Create partners for new owners automatically
+      const uniqueNewOwners = [...new Set(newOwners)];
+      if (uniqueNewOwners.length > 0) {
+        console.log(`Creating ${uniqueNewOwners.length} new partners for diesel data`);
+        
+        for (const ownerName of uniqueNewOwners) {
+          try {
+            // Generate unique partner ID
+            let partnerId = generatePartnerId(ownerName);
+            let attempts = 0;
+
+            while (attempts < 10) {
+              const existing = await db.query.partners.findFirst({
+                where: eq(partners.partnerId, partnerId),
+              });
+
+              if (!existing) break;
+              partnerId = generatePartnerId(ownerName);
+              attempts++;
+            }
+
+            if (attempts >= 10) {
+              console.log(`Failed to generate unique partner ID for ${ownerName}`);
+              continue;
+            }
+
+            // Create new partner
+            const password = generatePassword();
+            const hashedPassword = await bcrypt.hash(password, 12);
+
+            await db.insert(partners).values({
+              name: ownerName,
+              partnerId,
+              password: hashedPassword,
+            });
+
+            console.log(`✅ Created new partner: ${ownerName} (ID: ${partnerId})`);
+            newPartners.push(ownerName);
+          } catch (error) {
+            console.log(`Error creating partner ${ownerName}: ${error}`);
+          }
+        }
       }
+
+      console.log(`📊 Diesel file validation: ${existingOwners.length} existing owners, ${uniqueNewOwners.length} new owners created`);
     }
 
     // Process dispatch file
@@ -310,10 +345,12 @@ export async function POST(req: NextRequest) {
       skippedDuplicates,
       newPartners,
       errors: errors.length > 0 ? errors : undefined,
-      message:
-        skippedDuplicates > 0
-          ? `${skippedDuplicates} duplicate records were skipped to prevent duplication.`
-          : undefined,
+      message: [
+        `${successfulRows} rows processed successfully`,
+        failedRows > 0 ? `${failedRows} rows failed` : null,
+        skippedDuplicates > 0 ? `${skippedDuplicates} duplicates skipped` : null,
+        newPartners.length > 0 ? `${newPartners.length} new partners created automatically` : null,
+      ].filter(Boolean).join(', ') + '.',
     });
   } catch (error) {
     console.error('File processing error:', error);

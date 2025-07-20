@@ -771,7 +771,7 @@ const AdminDashboard = () => {
                           Columns: Date, Vehicle No, Volume, Item, Fuel Station, Status, Owner Name
                         </p>
                         <p className="text-xs text-blue-600 mt-1">
-                          Note: Owner Name must match existing partners in the system. Diesel data can be uploaded independently.
+                          Note: Owner Name will automatically create new partners if they don't exist. Diesel data can be uploaded independently.
                         </p>
                       </div>
                     </div>
