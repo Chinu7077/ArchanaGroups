@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { db } from '@/config/db';
-import { dispatchData, dieselData } from '@/config/db/schema';
+import { dispatchData, dieselData, partners } from '@/config/db/schema';
 
 export async function POST(req: NextRequest) {
   try {
