@@ -128,6 +128,15 @@ const AdminDashboard = () => {
   // Get current user
   const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery();
 
+  // Redirect if not authenticated or not admin
+  useEffect(() => {
+    console.log('🔍 Admin dashboard auth check:', { user, userLoading });
+    if (!userLoading && (!user || user.role !== 'admin')) {
+      console.log('🚫 No admin user found, redirecting to admin login');
+      router.push('/auth/admin-login');
+    }
+  }, [user, userLoading, router]);
+
   // Get partner statistics
   const {
     data: stats,
@@ -654,12 +663,27 @@ const AdminDashboard = () => {
     }
   }, [user, userLoading, router]);
 
-  if (userLoading || !user) {
+  // Show loading state
+  if (userLoading) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Loading...</span>
+          <span>Loading admin dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no user or not admin after loading
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">Admin access required</div>
+          <Button onClick={() => router.push('/auth/admin-login')}>
+            Go to Admin Login
+          </Button>
         </div>
       </div>
     );

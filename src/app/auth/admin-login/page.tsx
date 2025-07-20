@@ -76,14 +76,22 @@ export default function AdminLoginPage() {
   const utils = trpc.useUtils();
   const loginMutation = trpc.auth.adminLogin.useMutation({
     onSuccess: (data) => {
+      console.log('✅ Admin login successful:', data);
       toast.success(`Welcome back, ${data.user?.username || 'Admin'}`);
-      // Invalidate auth queries to update state immediately
-      utils.auth.getUser.invalidate();
-      utils.auth.checkAuth.invalidate();
-      // Use replace to prevent back navigation to login
-      router.replace('/admin/dashboard');
+      
+      // Force a small delay to ensure session is set
+      setTimeout(() => {
+        // Invalidate auth queries to update state immediately
+        utils.auth.getUser.invalidate();
+        utils.auth.checkAuth.invalidate();
+        
+        // Use replace to prevent back navigation to login
+        console.log('🔄 Redirecting to admin dashboard...');
+        router.replace('/admin/dashboard');
+      }, 500);
     },
     onError: (error) => {
+      console.error('❌ Admin login error:', error);
       toast.error(`Login failed: ${error.message}`);
     },
   });
@@ -111,11 +119,11 @@ export default function AdminLoginPage() {
         {/* Back button */}
         <Button
           variant="ghost"
-          onClick={() => router.push('/transport')}
+          onClick={() => router.push('/')}
           className="mb-4 flex items-center space-x-2 hover:bg-white/50"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Transport</span>
+          <span>Back to Home</span>
         </Button>
 
         <Card className="border-0 bg-white/80 shadow-2xl backdrop-blur-sm">
@@ -129,6 +137,9 @@ export default function AdminLoginPage() {
             <CardDescription className="text-gray-600">
               Access the administrative dashboard
             </CardDescription>
+            <div className="mt-2 text-xs text-slate-600 font-medium">
+              ADMIN PORTAL - SYSTEM ADMINISTRATION
+            </div>
           </CardHeader>
 
           <CardContent>
@@ -209,6 +220,14 @@ export default function AdminLoginPage() {
                     'Sign In'
                   )}
                 </Button>
+                
+                {loginMutation.isPending && (
+                  <div className="mt-4 text-center">
+                    <p className="text-sm text-slate-600">
+                      Please wait while we authenticate you...
+                    </p>
+                  </div>
+                )}
               </form>
             </Form>
 
@@ -217,6 +236,19 @@ export default function AdminLoginPage() {
                 <strong>Security Notice:</strong> Admin access is restricted.
                 All login attempts are logged.
               </p>
+            </div>
+            
+            {/* Navigation to other login */}
+            <div className="mt-4 text-center">
+              <p className="text-xs text-gray-500 mb-2">Need partner access?</p>
+              <Button
+                variant="link"
+                size="sm"
+                onClick={() => router.push('/auth/partner-login')}
+                className="text-xs text-red-600 hover:text-red-800"
+              >
+                Go to Partner Login →
+              </Button>
             </div>
           </CardContent>
         </Card>

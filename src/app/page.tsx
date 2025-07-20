@@ -132,6 +132,32 @@ export default function HomePage() {
                   Logout
                 </Button>
               </div>
+              
+              {/* Login Navigation */}
+              {!loading && !session?.authenticated && (
+                <div className="absolute top-4 left-4 flex items-center gap-2">
+                  <div className="flex gap-2">
+                    <Button
+                      onClick={() => router.push('/auth/partner-login')}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
+                    >
+                      <User size={16} />
+                      Partner Login
+                    </Button>
+                    <Button
+                      onClick={() => router.push('/auth/admin-login')}
+                      variant="outline"
+                      size="sm"
+                      className="flex items-center gap-2 bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
+                    >
+                      <Shield size={16} />
+                      Admin Login
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="mx-auto max-w-5xl text-center">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}

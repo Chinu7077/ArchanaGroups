@@ -198,17 +198,34 @@ const PartnerDashboard = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
+    console.log('🔍 Partner dashboard auth check:', { user, userLoading });
     if (!userLoading && !user) {
+      console.log('🚫 No user found, redirecting to partner login');
       router.push('/auth/partner-login');
     }
   }, [user, userLoading, router]);
 
-  if (userLoading || !user) {
+  // Show loading state
+  if (userLoading) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Loading...</span>
+          <span>Loading dashboard...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state if no user after loading
+  if (!user) {
+    return (
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="text-center">
+          <div className="text-red-600 mb-4">Authentication required</div>
+          <Button onClick={() => router.push('/auth/partner-login')}>
+            Go to Login
+          </Button>
         </div>
       </div>
     );
