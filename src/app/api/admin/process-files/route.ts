@@ -100,7 +100,57 @@ export async function POST(req: NextRequest) {
 
     if (!dispatchFile && !dieselFile) {
       return NextResponse.json(
-        { error: 'At least one file is required' },
+        { 
+          success: false,
+          error: 'At least one file is required',
+          message: 'Please select at least one Excel file to upload.'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate file types
+    if (dispatchFile && !dispatchFile.name.match(/\.(xlsx|xls)$/i)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid dispatch file format',
+          message: 'Dispatch file must be an Excel file (.xlsx or .xls)'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (dieselFile && !dieselFile.name.match(/\.(xlsx|xls)$/i)) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Invalid diesel file format',
+          message: 'Diesel file must be an Excel file (.xlsx or .xls)'
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate file sizes (max 10MB each)
+    if (dispatchFile && dispatchFile.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Dispatch file too large',
+          message: 'Dispatch file must be less than 10MB'
+        },
+        { status: 400 }
+      );
+    }
+
+    if (dieselFile && dieselFile.size > 10 * 1024 * 1024) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: 'Diesel file too large',
+          message: 'Diesel file must be less than 10MB'
+        },
         { status: 400 }
       );
     }
@@ -120,17 +170,35 @@ export async function POST(req: NextRequest) {
     // If dispatch file is provided, collect vehicle numbers from it
     if (dispatchFile) {
       console.log('Collecting vehicle numbers from dispatch file');
-      const dispatchRows = await parseXlsxFileContent(dispatchFile);
-      
-      // Skip header row and collect all vehicle numbers
-      for (let i = 1; i < dispatchRows.length; i++) {
-        const row = dispatchRows[i];
-        if (row.length < 6) continue; // Skip incomplete rows
+      try {
+        const dispatchRows = await parseXlsxFileContent(dispatchFile);
+        console.log('Dispatch file parsed successfully, rows:', dispatchRows.length);
+        console.log('First few rows:', dispatchRows.slice(0, 3));
         
-        const vehicleNumber = row[1];
-        if (vehicleNumber) {
-          dispatchVehicleNumbers.add(vehicleNumber.toUpperCase());
+        // Skip header row and collect all vehicle numbers
+        for (let i = 1; i < dispatchRows.length; i++) {
+          const row = dispatchRows[i];
+          if (row.length < 6) {
+            console.log(`Skipping incomplete row ${i}:`, row);
+            continue; // Skip incomplete rows
+          }
+          
+          const vehicleNumber = row[1];
+          if (vehicleNumber) {
+            dispatchVehicleNumbers.add(vehicleNumber.toUpperCase());
+          }
         }
+        console.log('Vehicle numbers collected:', Array.from(dispatchVehicleNumbers));
+      } catch (parseError) {
+        console.error('Error parsing dispatch file:', parseError);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Failed to parse dispatch file',
+            message: `Error reading dispatch file: ${parseError instanceof Error ? parseError.message : 'Unknown error'}`
+          },
+          { status: 400 }
+        );
       }
     }
     

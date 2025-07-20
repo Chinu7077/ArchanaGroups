@@ -336,8 +336,11 @@ const AdminDashboard = () => {
         if (!response.ok) {
           try {
             const errorData = await response.json();
-            throw new Error(errorData.message || errorData.error || 'Failed to process files');
+            const errorMessage = errorData.message || errorData.error || `Server error (${response.status})`;
+            console.error('Server error details:', errorData);
+            throw new Error(errorMessage);
           } catch (parseError) {
+            console.error('Error parsing response:', parseError);
             throw new Error(`Server error (${response.status}): ${response.statusText}`);
           }
         }
@@ -405,6 +408,19 @@ const AdminDashboard = () => {
       return;
     }
 
+    console.log('📁 Files to upload:', {
+      dispatchFile: dispatchFile ? {
+        name: dispatchFile.name,
+        size: dispatchFile.size,
+        type: dispatchFile.type
+      } : null,
+      dieselFile: dieselFile ? {
+        name: dieselFile.name,
+        size: dieselFile.size,
+        type: dieselFile.type
+      } : null
+    });
+
     try {
       const formData = new FormData();
       if (dispatchFile) {
@@ -415,7 +431,9 @@ const AdminDashboard = () => {
       }
 
       await processFilesMutation.mutateAsync(formData);
-    } catch (error) {}
+    } catch (error) {
+      console.error('Upload failed:', error);
+    }
   };
 
   const handleDownloadCredentials = async () => {
@@ -797,8 +815,11 @@ const AdminDashboard = () => {
                   <Alert variant="destructive" className="mb-6 relative">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="ml-2 pr-8 text-sm">
-                      <strong>Validation Error:</strong>
-                      <div className="mt-2 whitespace-pre-wrap">{fileUploadError}</div>
+                      <strong>Upload Error:</strong>
+                      <div className="mt-2 whitespace-pre-wrap text-sm">{fileUploadError}</div>
+                      <div className="mt-2 text-xs text-red-600">
+                        Please check your file format and try again. Files must be Excel (.xlsx or .xls) and less than 10MB.
+                      </div>
                     </AlertDescription>
                     <button
                       onClick={() => setFileUploadError(null)}
