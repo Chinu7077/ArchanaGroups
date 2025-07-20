@@ -119,6 +119,7 @@ const AdminDashboard = () => {
   );
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
   const router = useRouter();
 
   // Get current user
@@ -211,6 +212,29 @@ const AdminDashboard = () => {
     },
     onError: () => {
       toast.error('Failed to delete partner');
+    },
+  });
+
+  const clearDataMutation = useMutation({
+    mutationFn: async () => {
+      const response = await fetch('/api/admin/clear-data', {
+        method: 'POST',
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to clear data');
+      }
+
+      return response.json();
+    },
+    onSuccess: (result) => {
+      toast.success(`Data cleared successfully! ${result.clearedRecords.dispatch} dispatch and ${result.clearedRecords.diesel} diesel records removed.`);
+      setClearDataDialogOpen(false);
+      refetchStats();
+    },
+    onError: (error: Error) => {
+      toast.error(`Failed to clear data: ${error.message}`);
     },
   });
 
@@ -905,7 +929,17 @@ const AdminDashboard = () => {
                       ></div>
                     </div>
                   )}
-                  <div className="flex justify-end">
+                  <div className="flex justify-between items-center">
+                    <Button
+                      onClick={() => setClearDataDialogOpen(true)}
+                      variant="destructive"
+                      disabled={clearDataMutation.isPending}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      <Trash2 className="mr-2 h-4 w-4" />
+                      {clearDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
+                    </Button>
+                    
                     <Button
                       onClick={handleUploadFiles}
                       disabled={
@@ -990,6 +1024,37 @@ const AdminDashboard = () => {
               {deletePartnerMutation.isPending
                 ? 'Deleting...'
                 : 'Delete Partner'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={clearDataDialogOpen} onOpenChange={setClearDataDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Data</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear ALL dispatch and diesel data from the database?
+              <br />
+              <br />
+              <strong className="text-red-600">⚠️ This action cannot be undone!</strong>
+              <br />
+              <br />
+              This will permanently remove all uploaded data and allow you to start fresh with new uploads.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setClearDataDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearDataMutation.mutate()}
+              disabled={clearDataMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {clearDataMutation.isPending
+                ? 'Clearing...'
+                : 'Clear All Data'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

@@ -333,16 +333,17 @@ export async function POST(req: NextRequest) {
             ? excelDateToDateString(date)
             : new Date(date).toISOString().split('T')[0];
 
-          // Check for duplicates (simplified check)
+          // Check for duplicates (more flexible - only check date + vehicle + material)
           const existingDispatch = await db.query.dispatchData.findFirst({
             where: and(
               eq(dispatchData.date, dateString),
               eq(dispatchData.vehicleNumber, vehicleNumber.toUpperCase()),
-              eq(dispatchData.ownerName, ownerName.trim())
+              eq(dispatchData.material, material)
             ),
           });
 
           if (existingDispatch) {
+            console.log(`⏭️  Skipping duplicate: ${dateString} - ${vehicleNumber} - ${material}`);
             skippedDuplicates++;
             continue;
           }
@@ -410,16 +411,17 @@ export async function POST(req: NextRequest) {
             ? excelDateToDateString(date)
             : new Date(date).toISOString().split('T')[0];
 
-          // Check for duplicates (simplified check)
+          // Check for duplicates (more flexible - only check date + vehicle + item)
           const existingDiesel = await db.query.dieselData.findFirst({
             where: and(
               eq(dieselData.date, dateString),
               eq(dieselData.vehicleNumber, upperVehicleNumber),
-              eq(dieselData.fuelStation, fuelStation)
+              eq(dieselData.item, item)
             ),
           });
 
           if (existingDiesel) {
+            console.log(`⏭️  Skipping duplicate diesel: ${dateString} - ${vehicleNumber} - ${item}`);
             skippedDuplicates++;
             continue;
           }
