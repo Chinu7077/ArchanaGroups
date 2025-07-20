@@ -136,27 +136,45 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Validate file types
-    if (dispatchFile && !dispatchFile.name.match(/\.(xlsx|xls)$/i)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid dispatch file format',
-          message: 'Dispatch file must be an Excel file (.xlsx or .xls)'
-        },
-        { status: 400 }
-      );
+    // Validate file types with detailed logging
+    if (dispatchFile) {
+      console.log(`🔍 Validating dispatch file: ${dispatchFile.name}`);
+      console.log(`   Size: ${dispatchFile.size} bytes`);
+      console.log(`   Type: ${dispatchFile.type}`);
+      console.log(`   Extension: ${dispatchFile.name.split('.').pop()}`);
+      
+      if (!dispatchFile.name.match(/\.(xlsx|xls)$/i)) {
+        console.log(`❌ Invalid dispatch file format: ${dispatchFile.name}`);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid dispatch file format',
+            message: `Dispatch file "${dispatchFile.name}" must be an Excel file (.xlsx or .xls). Current extension: ${dispatchFile.name.split('.').pop()}`
+          },
+          { status: 400 }
+        );
+      }
+      console.log(`✅ Dispatch file format is valid`);
     }
 
-    if (dieselFile && !dieselFile.name.match(/\.(xlsx|xls)$/i)) {
-      return NextResponse.json(
-        {
-          success: false,
-          error: 'Invalid diesel file format',
-          message: 'Diesel file must be an Excel file (.xlsx or .xls)'
-        },
-        { status: 400 }
-      );
+    if (dieselFile) {
+      console.log(`🔍 Validating diesel file: ${dieselFile.name}`);
+      console.log(`   Size: ${dieselFile.size} bytes`);
+      console.log(`   Type: ${dieselFile.type}`);
+      console.log(`   Extension: ${dieselFile.name.split('.').pop()}`);
+      
+      if (!dieselFile.name.match(/\.(xlsx|xls)$/i)) {
+        console.log(`❌ Invalid diesel file format: ${dieselFile.name}`);
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Invalid diesel file format',
+            message: `Diesel file "${dieselFile.name}" must be an Excel file (.xlsx or .xls). Current extension: ${dieselFile.name.split('.').pop()}`
+          },
+          { status: 400 }
+        );
+      }
+      console.log(`✅ Diesel file format is valid`);
     }
 
     // Validate file sizes (max 10MB each)

@@ -122,6 +122,7 @@ const AdminDashboard = () => {
   const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
   const [clearPartners, setClearPartners] = useState(false);
   const [forceUpload, setForceUpload] = useState(false);
+  const [testFile, setTestFile] = useState<File | null>(null);
   const router = useRouter();
 
   // Get current user
@@ -246,6 +247,35 @@ const AdminDashboard = () => {
     },
     onError: (error: Error) => {
       toast.error(`Failed to clear data: ${error.message}`);
+    },
+  });
+
+  const testFileMutation = useMutation({
+    mutationFn: async (file: File) => {
+      const formData = new FormData();
+      formData.append('file', file);
+
+      const response = await fetch('/api/admin/test-file', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to test file');
+      }
+
+      return response.json();
+    },
+    onSuccess: (result) => {
+      console.log('✅ File test successful:', result);
+      toast.success(`File test successful! ${result.fileInfo.totalRows} rows, ${result.fileInfo.totalColumns} columns`);
+      console.log('📋 Headers:', result.headers);
+      console.log('👀 Preview:', result.preview);
+    },
+    onError: (error: Error) => {
+      console.error('❌ File test failed:', error);
+      toast.error(`File test failed: ${error.message}`);
     },
   });
 
@@ -959,19 +989,39 @@ const AdminDashboard = () => {
                       ></div>
                     </div>
                   )}
-                  <div className="flex flex-col gap-4">
+                                  <div className="flex flex-col gap-4">
+                  <div className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      id="forceUpload"
+                      checked={forceUpload}
+                      onChange={(e) => setForceUpload(e.target.checked)}
+                      className="rounded border-gray-300"
+                    />
+                    <label htmlFor="forceUpload" className="text-sm text-gray-600">
+                      Force upload (skip duplicate checking)
+                    </label>
+                  </div>
+                  
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-medium mb-2">Test File (Optional)</h4>
                     <div className="flex items-center gap-2">
-                      <input
-                        type="checkbox"
-                        id="forceUpload"
-                        checked={forceUpload}
-                        onChange={(e) => setForceUpload(e.target.checked)}
-                        className="rounded border-gray-300"
+                      <Input
+                        type="file"
+                        accept=".xlsx,.xls"
+                        onChange={(e) => setTestFile(e.target.files?.[0] || null)}
+                        className="max-w-xs"
                       />
-                      <label htmlFor="forceUpload" className="text-sm text-gray-600">
-                        Force upload (skip duplicate checking)
-                      </label>
+                      <Button
+                        onClick={() => testFile && testFileMutation.mutate(testFile)}
+                        disabled={!testFile || testFileMutation.isPending}
+                        variant="outline"
+                        size="sm"
+                      >
+                        {testFileMutation.isPending ? 'Testing...' : 'Test File'}
+                      </Button>
                     </div>
+                  </div>
                     
                     <div className="flex justify-between items-center">
                       <Button
