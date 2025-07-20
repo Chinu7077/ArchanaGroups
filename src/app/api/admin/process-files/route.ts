@@ -108,6 +108,7 @@ export async function POST(req: NextRequest) {
     const formData = await req.formData();
     const dispatchFile = formData.get('dispatchFile') as File | null;
     const dieselFile = formData.get('dieselFile') as File | null;
+    const forceUpload = formData.get('forceUpload') === 'true'; // New option to bypass duplicates
 
     console.log('📁 Files received:', {
       dispatchFile: dispatchFile ? {
@@ -359,19 +360,20 @@ export async function POST(req: NextRequest) {
             ? excelDateToDateString(date)
             : new Date(date).toISOString().split('T')[0];
 
-          // Check for duplicates (more flexible - only check date + vehicle + material)
-          const existingDispatch = await db.query.dispatchData.findFirst({
-            where: and(
-              eq(dispatchData.date, dateString),
-              eq(dispatchData.vehicleNumber, vehicleNumber.toUpperCase()),
-              eq(dispatchData.material, material)
-            ),
-          });
+          // Check for duplicates (very flexible - only check date + vehicle)
+          if (!forceUpload) {
+            const existingDispatch = await db.query.dispatchData.findFirst({
+              where: and(
+                eq(dispatchData.date, dateString),
+                eq(dispatchData.vehicleNumber, vehicleNumber.toUpperCase())
+              ),
+            });
 
-          if (existingDispatch) {
-            console.log(`⏭️  Skipping duplicate: ${dateString} - ${vehicleNumber} - ${material}`);
-            skippedDuplicates++;
-            continue;
+            if (existingDispatch) {
+              console.log(`⏭️  Skipping duplicate: ${dateString} - ${vehicleNumber}`);
+              skippedDuplicates++;
+              continue;
+            }
           }
 
           // Prepare data for batch insertion
@@ -437,19 +439,20 @@ export async function POST(req: NextRequest) {
             ? excelDateToDateString(date)
             : new Date(date).toISOString().split('T')[0];
 
-          // Check for duplicates (more flexible - only check date + vehicle + item)
-          const existingDiesel = await db.query.dieselData.findFirst({
-            where: and(
-              eq(dieselData.date, dateString),
-              eq(dieselData.vehicleNumber, upperVehicleNumber),
-              eq(dieselData.item, item)
-            ),
-          });
+          // Check for duplicates (very flexible - only check date + vehicle)
+          if (!forceUpload) {
+            const existingDiesel = await db.query.dieselData.findFirst({
+              where: and(
+                eq(dieselData.date, dateString),
+                eq(dieselData.vehicleNumber, upperVehicleNumber)
+              ),
+            });
 
-          if (existingDiesel) {
-            console.log(`⏭️  Skipping duplicate diesel: ${dateString} - ${vehicleNumber} - ${item}`);
-            skippedDuplicates++;
-            continue;
+            if (existingDiesel) {
+              console.log(`⏭️  Skipping duplicate diesel: ${dateString} - ${vehicleNumber}`);
+              skippedDuplicates++;
+              continue;
+            }
           }
 
           // Prepare data for batch insertion

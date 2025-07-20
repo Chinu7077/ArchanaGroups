@@ -120,6 +120,7 @@ const AdminDashboard = () => {
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
+  const [forceUpload, setForceUpload] = useState(false);
   const router = useRouter();
 
   // Get current user
@@ -468,6 +469,9 @@ const AdminDashboard = () => {
       }
       if (dieselFile) {
         formData.append('dieselFile', dieselFile);
+      }
+      if (forceUpload) {
+        formData.append('forceUpload', 'true');
       }
 
       await processFilesMutation.mutateAsync(formData);
@@ -945,30 +949,45 @@ const AdminDashboard = () => {
                       ></div>
                     </div>
                   )}
-                  <div className="flex justify-between items-center">
-                    <Button
-                      onClick={() => setClearDataDialogOpen(true)}
-                      variant="destructive"
-                      disabled={clearDataMutation.isPending}
-                      className="bg-red-600 hover:bg-red-700"
-                    >
-                      <Trash2 className="mr-2 h-4 w-4" />
-                      {clearDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
-                    </Button>
+                  <div className="flex flex-col gap-4">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="checkbox"
+                        id="forceUpload"
+                        checked={forceUpload}
+                        onChange={(e) => setForceUpload(e.target.checked)}
+                        className="rounded border-gray-300"
+                      />
+                      <label htmlFor="forceUpload" className="text-sm text-gray-600">
+                        Force upload (skip duplicate checking)
+                      </label>
+                    </div>
                     
-                    <Button
-                      onClick={handleUploadFiles}
-                      disabled={
-                        (!dispatchFile && !dieselFile) ||
-                        processFilesMutation.isPending
-                      }
-                      className="bg-primary hover:bg-primary/90"
-                    >
-                      <Upload className="mr-2 h-4 w-4" />
-                      {processFilesMutation.isPending
-                        ? `Processing... ${Math.round(uploadProgress)}%`
-                        : 'Process Files'}
-                    </Button>
+                    <div className="flex justify-between items-center">
+                      <Button
+                        onClick={() => setClearDataDialogOpen(true)}
+                        variant="destructive"
+                        disabled={clearDataMutation.isPending}
+                        className="bg-red-600 hover:bg-red-700"
+                      >
+                        <Trash2 className="mr-2 h-4 w-4" />
+                        {clearDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
+                      </Button>
+                      
+                      <Button
+                        onClick={handleUploadFiles}
+                        disabled={
+                          (!dispatchFile && !dieselFile) ||
+                          processFilesMutation.isPending
+                        }
+                        className="bg-primary hover:bg-primary/90"
+                      >
+                        <Upload className="mr-2 h-4 w-4" />
+                        {processFilesMutation.isPending
+                          ? `Processing... ${Math.round(uploadProgress)}%`
+                          : 'Process Files'}
+                      </Button>
+                    </div>
                   </div>
                 </div>
               </CardContent>
