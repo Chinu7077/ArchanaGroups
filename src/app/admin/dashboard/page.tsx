@@ -279,6 +279,38 @@ const AdminDashboard = () => {
     },
   });
 
+  const simpleUploadMutation = useMutation({
+    mutationFn: async (formData: FormData) => {
+      console.log('🧪 Starting simple upload test...');
+      
+      const response = await fetch('/api/admin/simple-upload', {
+        method: 'POST',
+        body: formData,
+      });
+
+      console.log('📥 Simple upload response:', {
+        status: response.status,
+        statusText: response.statusText,
+        ok: response.ok
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Simple upload failed');
+      }
+
+      return response.json();
+    },
+    onSuccess: (result) => {
+      console.log('✅ Simple upload successful:', result);
+      toast.success('Simple upload test successful! Files received by server.');
+    },
+    onError: (error: Error) => {
+      console.error('❌ Simple upload failed:', error);
+      toast.error(`Simple upload failed: ${error.message}`);
+    },
+  });
+
   const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -409,6 +441,18 @@ const AdminDashboard = () => {
 
   const processFilesMutation = useMutation({
     mutationFn: async (formData: FormData) => {
+      console.log('🔄 Starting file upload mutation...');
+      
+      // Log FormData contents
+      console.log('📋 FormData contents:');
+      for (let [key, value] of formData.entries()) {
+        if (value instanceof File) {
+          console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+      
       // Simulate progress updates
       const progressInterval = setInterval(() => {
         setUploadProgress(prev => {
@@ -418,6 +462,7 @@ const AdminDashboard = () => {
       }, 500);
 
       try {
+        console.log('📤 Sending request to /api/admin/process-files...');
         const response = await fetch('/api/admin/process-files', {
           method: 'POST',
           body: formData,
@@ -426,28 +471,41 @@ const AdminDashboard = () => {
         clearInterval(progressInterval);
         setUploadProgress(100);
 
+        console.log('📥 Response received:', {
+          status: response.status,
+          statusText: response.statusText,
+          contentType: response.headers.get('content-type'),
+          ok: response.ok
+        });
+
         // Check if response is JSON
         const contentType = response.headers.get('content-type');
         if (!contentType || !contentType.includes('application/json')) {
+          console.error('❌ Non-JSON response received');
+          const textResponse = await response.text();
+          console.error('Response text:', textResponse);
           throw new Error('Server returned non-JSON response. Please try again.');
         }
 
         if (!response.ok) {
           try {
             const errorData = await response.json();
+            console.error('❌ Server error response:', errorData);
             const errorMessage = errorData.message || errorData.error || `Server error (${response.status})`;
-            console.error('Server error details:', errorData);
             throw new Error(errorMessage);
           } catch (parseError) {
-            console.error('Error parsing response:', parseError);
+            console.error('❌ Error parsing error response:', parseError);
             throw new Error(`Server error (${response.status}): ${response.statusText}`);
           }
         }
 
-        return response.json();
+        const result = await response.json();
+        console.log('✅ Upload successful:', result);
+        return result;
       } catch (error) {
         clearInterval(progressInterval);
         setUploadProgress(0);
+        console.error('❌ Upload mutation failed:', error);
         throw error;
       }
     },
@@ -1060,19 +1118,38 @@ const AdminDashboard = () => {
                         {clearDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
                       </Button>
                       
-                      <Button
-                        onClick={handleUploadFiles}
-                        disabled={
-                          (!dispatchFile && !dieselFile) ||
-                          processFilesMutation.isPending
-                        }
-                        className="bg-primary hover:bg-primary/90"
-                      >
-                        <Upload className="mr-2 h-4 w-4" />
-                        {processFilesMutation.isPending
-                          ? `Processing... ${Math.round(uploadProgress)}%`
-                          : 'Process Files'}
-                      </Button>
+                      <div className="flex gap-2">
+                        <Button
+                          onClick={() => {
+                            const formData = new FormData();
+                            if (dispatchFile) formData.append('dispatchFile', dispatchFile);
+                            if (dieselFile) formData.append('dieselFile', dieselFile);
+                            simpleUploadMutation.mutate(formData);
+                          }}
+                          disabled={
+                            (!dispatchFile && !dieselFile) ||
+                            simpleUploadMutation.isPending
+                          }
+                          variant="outline"
+                          size="sm"
+                        >
+                          {simpleUploadMutation.isPending ? 'Testing...' : 'Test Upload'}
+                        </Button>
+                        
+                        <Button
+                          onClick={handleUploadFiles}
+                          disabled={
+                            (!dispatchFile && !dieselFile) ||
+                            processFilesMutation.isPending
+                          }
+                          className="bg-primary hover:bg-primary/90"
+                        >
+                          <Upload className="mr-2 h-4 w-4" />
+                          {processFilesMutation.isPending
+                            ? `Processing... ${Math.round(uploadProgress)}%`
+                            : 'Process Files'}
+                        </Button>
+                      </div>
                     </div>
                   </div>
                 </div>
