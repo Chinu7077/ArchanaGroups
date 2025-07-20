@@ -546,7 +546,7 @@ const AdminDashboard = () => {
       refetchPartners();
     },
     onError: (error: Error) => {
-      console.error('Upload error:', error);
+      console.error('❌ Upload error:', error);
       
       // Try to parse error message from response
       let errorMessage = error.message;
@@ -554,8 +554,14 @@ const AdminDashboard = () => {
         errorMessage = 'Server error occurred. Please try again or contact support.';
       }
       
-      setFileUploadError(errorMessage);
-      toast.error('File upload failed. See details below.');
+      // Add more context to the error
+      const detailedError = `Upload Error: ${errorMessage}\n\nPlease check:\n1. File format (.xlsx or .xls)\n2. File size (under 10MB)\n3. File content (not empty)\n4. Browser console for more details`;
+      
+      setFileUploadError(detailedError);
+      setUploadProgress(0);
+      
+      // Also show a toast with the error
+      toast.error(`Upload failed: ${errorMessage}`);
     },
   });
 

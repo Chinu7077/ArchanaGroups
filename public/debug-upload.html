@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload Debug Tool</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .error { background-color: #ffebee; border-color: #f44336; }
+        .success { background-color: #e8f5e8; border-color: #4caf50; }
+        .info { background-color: #e3f2fd; border-color: #2196f3; }
+        pre { background-color: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; border: none; border-radius: 5px; cursor: pointer; }
+        .btn-primary { background-color: #2196f3; color: white; }
+        .btn-success { background-color: #4caf50; color: white; }
+        .btn-danger { background-color: #f44336; color: white; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Upload Debug Tool</h1>
+        <p>Use this tool to debug file upload issues step by step.</p>
+        
+        <div class="section info">
+            <h3>Step 1: Select Files</h3>
+            <input type="file" id="dispatchFile" accept=".xlsx,.xls" />
+            <input type="file" id="dieselFile" accept=".xlsx,.xls" />
+            <button onclick="analyzeFiles()" class="btn-primary">Analyze Files</button>
+        </div>
+        
+        <div class="section info">
+            <h3>Step 2: Test Simple Upload</h3>
+            <button onclick="testSimpleUpload()" class="btn-success">Test Simple Upload</button>
+            <button onclick="testFileParsing()" class="btn-success">Test File Parsing</button>
+        </div>
+        
+        <div class="section info">
+            <h3>Step 3: Test Full Upload</h3>
+            <button onclick="testFullUpload()" class="btn-primary">Test Full Upload</button>
+        </div>
+        
+        <div id="results" class="section" style="display: none;"></div>
+    </div>
+
+    <script>
+        let selectedFiles = { dispatch: null, diesel: null };
+        
+        document.getElementById('dispatchFile').addEventListener('change', function(e) {
+            selectedFiles.dispatch = e.target.files[0];
+            console.log('Dispatch file selected:', selectedFiles.dispatch);
+        });
+        
+        document.getElementById('dieselFile').addEventListener('change', function(e) {
+            selectedFiles.diesel = e.target.files[0];
+            console.log('Diesel file selected:', selectedFiles.diesel);
+        });
+        
+        function analyzeFiles() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            
+            let html = '<h3>File Analysis Results</h3>';
+            
+            if (selectedFiles.dispatch) {
+                html += '<h4>Dispatch File:</h4>';
+                html += analyzeFile(selectedFiles.dispatch);
+            }
+            
+            if (selectedFiles.diesel) {
+                html += '<h4>Diesel File:</h4>';
+                html += analyzeFile(selectedFiles.diesel);
+            }
+            
+            if (!selectedFiles.dispatch && !selectedFiles.diesel) {
+                html += '<p class="error">No files selected!</p>';
+            }
+            
+            resultsDiv.innerHTML = html;
+        }
+        
+        function analyzeFile(file) {
+            const isValidFormat = file.name.match(/\.(xlsx|xls)$/i);
+            const isValidSize = file.size <= 10 * 1024 * 1024;
+            
+            let html = `<p><strong>Name:</strong> ${file.name}</p>`;
+            html += `<p><strong>Size:</strong> ${(file.size / 1024).toFixed(2)} KB (${(file.size / 1024 / 1024).toFixed(2)} MB)</p>`;
+            html += `<p><strong>Type:</strong> ${file.type}</p>`;
+            html += `<p><strong>Extension:</strong> ${file.name.split('.').pop()}</p>`;
+            html += `<p><strong>Format Valid:</strong> ${isValidFormat ? '✅ Yes' : '❌ No'}</p>`;
+            html += `<p><strong>Size Valid:</strong> ${isValidSize ? '✅ Yes' : '❌ No'}</p>`;
+            
+            if (!isValidFormat || !isValidSize) {
+                html += '<p class="error">❌ File validation failed!</p>';
+            } else {
+                html += '<p class="success">✅ File validation passed!</p>';
+            }
+            
+            return html;
+        }
+        
+        async function testSimpleUpload() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<h3>Testing Simple Upload...</h3>';
+            
+            try {
+                const formData = new FormData();
+                if (selectedFiles.dispatch) formData.append('dispatchFile', selectedFiles.dispatch);
+                if (selectedFiles.diesel) formData.append('dieselFile', selectedFiles.diesel);
+                
+                console.log('Sending simple upload test...');
+                const response = await fetch('/api/admin/simple-upload', {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                const result = await response.json();
+                console.log('Simple upload result:', result);
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = '<h3 class="success">✅ Simple Upload Successful!</h3><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    resultsDiv.innerHTML = '<h3 class="error">❌ Simple Upload Failed!</h3><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                console.error('Simple upload error:', error);
+                resultsDiv.innerHTML = '<h3 class="error">❌ Simple Upload Error!</h3><p>' + error.message + '</p>';
+            }
+        }
+        
+        async function testFileParsing() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<h3>Testing File Parsing...</h3>';
+            
+            try {
+                const files = [selectedFiles.dispatch, selectedFiles.diesel].filter(f => f);
+                
+                for (const file of files) {
+                    const formData = new FormData();
+                    formData.append('file', file);
+                    
+                    console.log('Testing file parsing for:', file.name);
+                    const response = await fetch('/api/admin/test-file', {
+                        method: 'POST',
+                        body: formData,
+                    });
+                    
+                    const result = await response.json();
+                    console.log('File parsing result:', result);
+                    
+                    if (response.ok) {
+                        resultsDiv.innerHTML += '<h4 class="success">✅ ' + file.name + ' - Parsing Successful!</h4><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                    } else {
+                        resultsDiv.innerHTML += '<h4 class="error">❌ ' + file.name + ' - Parsing Failed!</h4><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                    }
+                }
+            } catch (error) {
+                console.error('File parsing error:', error);
+                resultsDiv.innerHTML += '<h3 class="error">❌ File Parsing Error!</h3><p>' + error.message + '</p>';
+            }
+        }
+        
+        async function testFullUpload() {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.style.display = 'block';
+            resultsDiv.innerHTML = '<h3>Testing Full Upload...</h3>';
+            
+            try {
+                const formData = new FormData();
+                if (selectedFiles.dispatch) formData.append('dispatchFile', selectedFiles.dispatch);
+                if (selectedFiles.diesel) formData.append('dieselFile', selectedFiles.diesel);
+                formData.append('forceUpload', 'true');
+                
+                console.log('Sending full upload test...');
+                const response = await fetch('/api/admin/process-files', {
+                    method: 'POST',
+                    body: formData,
+                });
+                
+                const result = await response.json();
+                console.log('Full upload result:', result);
+                
+                if (response.ok) {
+                    resultsDiv.innerHTML = '<h3 class="success">✅ Full Upload Successful!</h3><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                } else {
+                    resultsDiv.innerHTML = '<h3 class="error">❌ Full Upload Failed!</h3><pre>' + JSON.stringify(result, null, 2) + '</pre>';
+                }
+            } catch (error) {
+                console.error('Full upload error:', error);
+                resultsDiv.innerHTML = '<h3 class="error">❌ Full Upload Error!</h3><p>' + error.message + '</p>';
+            }
+        }
+    </script>
+</body>
+</html> 
