@@ -74,7 +74,9 @@ import {
   CheckCircle,
   Copy,
   X,
+  Settings,
 } from 'lucide-react';
+import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/config/trpc/client';
 import { useMutation } from '@tanstack/react-query';
@@ -480,12 +482,22 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <h2 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
-            Admin Dashboard
-          </h2>
-          <p className="text-muted-foreground">
-            Manage partners, upload data, and monitor system activity
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h2 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
+                Admin Dashboard
+              </h2>
+              <p className="text-muted-foreground">
+                Manage partners, upload data, and monitor system activity
+              </p>
+            </div>
+            <Link href="/admin/data-management">
+              <Button variant="outline" className="flex items-center gap-2">
+                <Settings className="h-4 w-4" />
+                Data Management
+              </Button>
+            </Link>
+          </div>
         </motion.div>
 
         {/* Main Content */}
