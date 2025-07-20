@@ -9,13 +9,31 @@ import * as XLSX from 'xlsx';
 // Parse XLSX file content directly from File object
 async function parseXlsxFileContent(file: File): Promise<any[]> {
   try {
+    console.log(`🔍 Parsing file: ${file.name} (${file.size} bytes, type: ${file.type})`);
+    
     const arrayBuffer = await file.arrayBuffer();
+    console.log(`📊 File loaded, buffer size: ${arrayBuffer.byteLength} bytes`);
+    
     const workbook = XLSX.read(arrayBuffer, { type: 'array' });
+    console.log(`📋 Workbook sheets: ${workbook.SheetNames.join(', ')}`);
+    
     const sheetName = workbook.SheetNames[0];
     const worksheet = workbook.Sheets[sheetName];
+    
+    if (!worksheet) {
+      throw new Error('No worksheet found in the Excel file');
+    }
+    
     const jsonData = XLSX.utils.sheet_to_json(worksheet, { header: 1 });
+    console.log(`📈 Parsed ${jsonData.length} rows from sheet: ${sheetName}`);
+    
+    if (jsonData.length === 0) {
+      throw new Error('Excel file appears to be empty');
+    }
+    
     return jsonData as any[];
   } catch (error) {
+    console.error('❌ Error parsing Excel file:', error);
     throw new Error(
       `Failed to parse XLSX file ${file.name}: ${error instanceof Error ? error.message : 'Unknown error'}`
     );
@@ -92,10 +110,18 @@ export async function POST(req: NextRequest) {
     const dieselFile = formData.get('dieselFile') as File | null;
 
     console.log('📁 Files received:', {
-      dispatchFile: dispatchFile?.name,
-      dieselFile: dieselFile?.name,
-      dispatchSize: dispatchFile?.size,
-      dieselSize: dieselFile?.size
+      dispatchFile: dispatchFile ? {
+        name: dispatchFile.name,
+        size: dispatchFile.size,
+        type: dispatchFile.type,
+        lastModified: dispatchFile.lastModified
+      } : null,
+      dieselFile: dieselFile ? {
+        name: dieselFile.name,
+        size: dieselFile.size,
+        type: dieselFile.type,
+        lastModified: dieselFile.lastModified
+      } : null
     });
 
     if (!dispatchFile && !dieselFile) {

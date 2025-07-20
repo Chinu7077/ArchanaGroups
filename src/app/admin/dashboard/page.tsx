@@ -324,6 +324,22 @@ const AdminDashboard = () => {
       // Clear any previous errors when new files are selected
       setFileUploadError(null);
       
+      // Validate file format
+      const isValidFormat = file.name.match(/\.(xlsx|xls)$/i);
+      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
+      
+      if (!isValidFormat) {
+        setFileUploadError(`Invalid file format: ${file.name}. Please select an Excel file (.xlsx or .xls)`);
+        return;
+      }
+      
+      if (!isValidSize) {
+        setFileUploadError(`File too large: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB`);
+        return;
+      }
+      
+      console.log(`✅ File validated: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${file.type})`);
+      
       if (fileType === 'dispatch') {
         setDispatchFile(file);
       } else {
