@@ -84,7 +84,7 @@ export default function PortalPage() {
             </motion.div>
 
             {/* Login Options */}
-            <div className="grid gap-8 md:grid-cols-2">
+            <div className="grid gap-4 sm:gap-6 md:gap-8 md:grid-cols-2">
               {/* Partner Login */}
               <motion.div
                 initial={{ opacity: 0, x: -50 }}
@@ -94,28 +94,28 @@ export default function PortalPage() {
                 className="group cursor-pointer"
                 onClick={handlePartnerLogin}
               >
-                <div className="h-full overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl transition-all hover:shadow-3xl">
-                  <div className="relative bg-gradient-to-br from-red-600 via-red-700 to-red-800 p-8 text-white">
-                    <div className="absolute top-0 right-0 h-40 w-40 translate-x-20 -translate-y-20 rounded-full bg-white/10" />
+                <div className="h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg transition-all hover:shadow-xl md:rounded-3xl md:shadow-2xl md:hover:shadow-3xl">
+                  <div className="relative bg-gradient-to-br from-red-600 via-red-700 to-red-800 p-4 text-white sm:p-6 md:p-8">
+                    <div className="absolute top-0 right-0 h-20 w-20 translate-x-10 -translate-y-10 rounded-full bg-white/10 sm:h-32 sm:w-32 sm:translate-x-16 sm:-translate-y-16 md:h-40 md:w-40 md:translate-x-20 md:-translate-y-20" />
                     <div className="relative z-10 text-center">
-                      <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-xl bg-white/20 shadow-md backdrop-blur-sm transition-transform duration-500 group-hover:scale-105">
-                        <Users className="h-12 w-12 text-white" />
+                      <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-lg bg-white/20 shadow-md backdrop-blur-sm transition-transform duration-500 group-hover:scale-105 sm:h-20 sm:w-20 sm:rounded-xl sm:mb-4 md:h-24 md:w-24">
+                        <Users className="h-8 w-8 text-white sm:h-10 sm:w-10 md:h-12 md:w-12" />
                       </div>
-                      <h3 className="mb-2 text-3xl font-bold">Partner Login</h3>
-                      <p className="text-lg text-red-100">
+                      <h3 className="mb-1 text-xl font-bold sm:mb-2 sm:text-2xl md:text-3xl">Partner Login</h3>
+                      <p className="text-sm text-red-100 sm:text-base md:text-lg">
                         Access your transport dashboard
                       </p>
                     </div>
                   </div>
-                  <div className="p-8 text-center">
-                    <p className="mb-6 text-gray-600">
+                  <div className="p-4 text-center sm:p-6 md:p-8">
+                    <p className="mb-4 text-sm text-gray-600 sm:mb-6 sm:text-base">
                       Your complete transport data, ready to view and download in an easy-to-use dashboard.
                     </p>
-                    <div className="inline-flex items-center justify-center space-x-3 rounded-2xl bg-red-600 px-8 py-3 text-lg font-bold text-white shadow-lg transition-all duration-300 group-hover:scale-105 hover:bg-red-700 hover:shadow-xl">
+                    <div className="inline-flex items-center justify-center space-x-2 rounded-xl bg-red-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-all duration-300 group-hover:scale-105 hover:bg-red-700 hover:shadow-xl sm:space-x-3 sm:px-6 sm:py-3 sm:text-base md:px-8 md:py-3 md:text-lg">
                       <span>Login as Partner</span>
                       <ArrowRight
-                        size={20}
-                        className="transition-transform group-hover:translate-x-1"
+                        size={16}
+                        className="transition-transform group-hover:translate-x-1 sm:w-5 sm:h-5 md:w-6 md:h-6"
                       />
                     </div>
                   </div>
@@ -131,28 +131,28 @@ export default function PortalPage() {
                 className="group cursor-pointer"
                 onClick={handleAdminLogin}
               >
-                <div className="h-full overflow-hidden rounded-3xl border border-gray-100 bg-white shadow-2xl transition-all hover:shadow-3xl">
-                  <div className="relative bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 p-8 text-white">
-                    <div className="absolute top-0 right-0 h-40 w-40 translate-x-20 -translate-y-20 rounded-full bg-white/10" />
+                <div className="h-full overflow-hidden rounded-2xl border border-gray-100 bg-white shadow-lg transition-all hover:shadow-xl md:rounded-3xl md:shadow-2xl md:hover:shadow-3xl">
+                  <div className="relative bg-gradient-to-br from-slate-600 via-slate-700 to-slate-800 p-4 text-white sm:p-6 md:p-8">
+                    <div className="absolute top-0 right-0 h-20 w-20 translate-x-10 -translate-y-10 rounded-full bg-white/10 sm:h-32 sm:w-32 sm:translate-x-16 sm:-translate-y-16 md:h-40 md:w-40 md:translate-x-20 md:-translate-y-20" />
                     <div className="relative z-10 text-center">
-                      <div className="mx-auto mb-4 flex h-24 w-24 items-center justify-center rounded-xl bg-white/20 shadow-md backdrop-blur-sm transition-transform duration-500 group-hover:scale-105">
-                        <Shield className="h-12 w-12 text-white" />
+                      <div className="mx-auto mb-3 flex h-16 w-16 items-center justify-center rounded-lg bg-white/20 shadow-md backdrop-blur-sm transition-transform duration-500 group-hover:scale-105 sm:h-20 sm:w-20 sm:rounded-xl sm:mb-4 md:h-24 md:w-24">
+                        <Shield className="h-8 w-8 text-white sm:h-10 sm:w-10 md:h-12 md:w-12" />
                       </div>
-                      <h3 className="mb-2 text-3xl font-bold">Admin Login</h3>
-                      <p className="text-lg text-slate-100">
+                      <h3 className="mb-1 text-xl font-bold sm:mb-2 sm:text-2xl md:text-3xl">Admin Login</h3>
+                      <p className="text-sm text-slate-100 sm:text-base md:text-lg">
                         Manage system and users
                       </p>
                     </div>
                   </div>
-                  <div className="p-8 text-center">
-                    <p className="mb-6 text-gray-600">
+                  <div className="p-4 text-center sm:p-6 md:p-8">
+                    <p className="mb-4 text-sm text-gray-600 sm:mb-6 sm:text-base">
                       Access administrative controls, manage partners, and view system analytics
                     </p>
-                    <div className="inline-flex items-center justify-center space-x-3 rounded-2xl bg-slate-600 px-8 py-3 text-lg font-bold text-white shadow-lg transition-all duration-300 group-hover:scale-105 hover:bg-slate-700 hover:shadow-xl">
+                    <div className="inline-flex items-center justify-center space-x-2 rounded-xl bg-slate-600 px-4 py-2 text-sm font-bold text-white shadow-lg transition-all duration-300 group-hover:scale-105 hover:bg-slate-700 hover:shadow-xl sm:space-x-3 sm:px-6 sm:py-3 sm:text-base md:px-8 md:py-3 md:text-lg">
                       <span>Login as Admin</span>
                       <ArrowRight
-                        size={20}
-                        className="transition-transform group-hover:translate-x-1"
+                        size={16}
+                        className="transition-transform group-hover:translate-x-1 sm:w-5 sm:h-5 md:w-6 md:h-6"
                       />
                     </div>
                   </div>
