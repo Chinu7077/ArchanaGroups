@@ -77,63 +77,39 @@ export async function POST(req: NextRequest) {
     // Create a map to store vehicle-to-partner mapping from current dispatch file processing
     const vehiclePartnerMap = new Map<string, string>();
 
-    // Pre-validate diesel file if provided
-    let dispatchVehicleNumbers: Set<string> = new Set();
-    
-    // If dispatch file is provided, collect vehicle numbers from it
-    if (dispatchFile) {
-      console.log('Collecting vehicle numbers from dispatch file');
-      const dispatchRows = await parseXlsxFileContent(dispatchFile);
-      
-      // Skip header row and collect all vehicle numbers
-      for (let i = 1; i < dispatchRows.length; i++) {
-        const row = dispatchRows[i];
-        if (row.length < 6) continue; // Skip incomplete rows
-        
-        const vehicleNumber = row[1];
-        if (vehicleNumber) {
-          dispatchVehicleNumbers.add(vehicleNumber.toUpperCase());
-        }
-      }
-    }
-    
+    // Pre-validate diesel file if provided (now using owner name instead of vehicle validation)
     if (dieselFile) {
-      console.log('Pre-validating diesel file for partner matches');
+      console.log('Pre-validating diesel file for owner name matches');
       const dieselRows = await parseXlsxFileContent(dieselFile);
-      const unmatchedDieselVehicles: string[] = [];
+      const unmatchedOwners: string[] = [];
 
-      // Check all diesel vehicle numbers against both database and current dispatch file
+      // Check all diesel owner names against database
       for (let i = 1; i < dieselRows.length; i++) {
         const row = dieselRows[i];
-        if (row.length < 6) continue; // Skip incomplete rows
+        if (row.length < 7) continue; // Skip incomplete rows (now expecting 7 columns including owner name)
 
-        const vehicleNumber = row[1]; // Only need vehicle number for validation
-        const upperVehicleNumber = vehicleNumber.toUpperCase();
+        const ownerName = row[6]; // Owner name is now the 7th column (index 6)
+        if (!ownerName?.trim()) continue;
 
-        // First check if vehicle exists in current dispatch file
-        const existsInCurrentFile = dispatchVehicleNumbers.has(upperVehicleNumber);
-        
-        if (!existsInCurrentFile) {
-          // If not in current file, check if vehicle exists in database
-          const existingDispatch = await db.query.dispatchData.findFirst({
-            where: eq(dispatchData.vehicleNumber, upperVehicleNumber),
-          });
+        // Check if owner exists in database
+        const existingPartner = await db.query.partners.findFirst({
+          where: eq(partners.name, ownerName.trim()),
+        });
 
-          if (!existingDispatch) {
-            unmatchedDieselVehicles.push(vehicleNumber);
-          }
+        if (!existingPartner) {
+          unmatchedOwners.push(ownerName.trim());
         }
       }
 
-      // If any unmatched vehicles found, return error immediately
-      if (unmatchedDieselVehicles.length > 0) {
-        const uniqueVehicles = [...new Set(unmatchedDieselVehicles)];
+      // If any unmatched owners found, return error immediately
+      if (unmatchedOwners.length > 0) {
+        const uniqueOwners = [...new Set(unmatchedOwners)];
         return NextResponse.json(
           {
             success: false,
             error: 'Diesel data validation failed',
-            unmatchedVehicles: uniqueVehicles,
-            message: `Cannot process diesel data: ${uniqueVehicles.length} vehicle(s) not found in dispatch data. Please upload dispatch data for these vehicles first: ${uniqueVehicles.join(', ')}`,
+            unmatchedOwners: uniqueOwners,
+            message: `Cannot process diesel data: ${uniqueOwners.length} owner(s) not found in database. Please ensure these owners have dispatch data uploaded first: ${uniqueOwners.join(', ')}`,
           },
           { status: 400 }
         );
@@ -263,24 +239,23 @@ export async function POST(req: NextRequest) {
       // Skip header row (assuming first row is header)
       for (let i = 1; i < dieselRows.length; i++) {
         const row = dieselRows[i];
-        if (row.length < 6) continue; // Skip incomplete rows
+        if (row.length < 7) continue; // Skip incomplete rows (now expecting 7 columns including owner name)
 
         try {
-          const [date, vehicleNumber, volume, item, fuelStation, status] = row;
+          const [date, vehicleNumber, volume, item, fuelStation, status, ownerName] = row;
           const upperVehicleNumber = vehicleNumber.toUpperCase();
 
-          // First check if this vehicle was processed in the current dispatch file
-          let partnerId: string | null = vehiclePartnerMap.get(upperVehicleNumber) || null;
-          
-          if (!partnerId) {
-            // If not found in current batch, find partner by vehicle number from database
-            const existingDispatch = await db.query.dispatchData.findFirst({
-              where: eq(dispatchData.vehicleNumber, upperVehicleNumber),
-              with: { partner: true },
-            });
+          // Find partner by owner name (we've already validated that owner exists)
+          const partner = await db.query.partners.findFirst({
+            where: eq(partners.name, ownerName.trim()),
+          });
 
-            // We've already validated that this vehicle exists in dispatch data
-            partnerId = existingDispatch!.partnerId;
+          if (!partner) {
+            errors.push(
+              `Diesel row ${i} error: No partner found for owner ${ownerName}`
+            );
+            failedRows++;
+            continue;
           }
 
           // Check if this diesel record already exists
@@ -307,15 +282,6 @@ export async function POST(req: NextRequest) {
             continue; // Skip duplicate record
           }
 
-          // Skip if partnerId is null (shouldn't happen as we validated)
-          if (!partnerId) {
-            errors.push(
-              `Diesel row ${i} error: No partner found for vehicle ${vehicleNumber}`
-            );
-            failedRows++;
-            continue;
-          }
-
           // Insert diesel data
           await db.insert(dieselData).values({
             date: dateString,
@@ -324,7 +290,7 @@ export async function POST(req: NextRequest) {
             item: item,
             fuelStation: fuelStation,
             status: status,
-            partnerId: partnerId,
+            partnerId: partner.id,
           });
 
           successfulRows++;

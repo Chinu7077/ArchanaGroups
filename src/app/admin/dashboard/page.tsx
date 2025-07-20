@@ -753,9 +753,30 @@ const AdminDashboard = () => {
               <CardHeader>
                 <CardTitle>Upload Excel Files</CardTitle>
                 <CardDescription>
-                  Upload dispatch and diesel data Excel files to process partner
-                  data
+                  Upload dispatch and diesel data Excel files to process partner data
                 </CardDescription>
+                <div className="mt-4 space-y-4">
+                  <div className="rounded-lg bg-blue-50 p-4">
+                    <h4 className="mb-2 font-semibold text-blue-900">File Format Requirements:</h4>
+                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                      <div>
+                        <h5 className="mb-1 font-medium text-blue-800">Dispatch Data Format:</h5>
+                        <p className="text-sm text-blue-700">
+                          Columns: Date, Vehicle No, Material, Quantity, Destination, Owner Name
+                        </p>
+                      </div>
+                      <div>
+                        <h5 className="mb-1 font-medium text-blue-800">Diesel Data Format:</h5>
+                        <p className="text-sm text-blue-700">
+                          Columns: Date, Vehicle No, Volume, Item, Fuel Station, Status, Owner Name
+                        </p>
+                        <p className="text-xs text-blue-600 mt-1">
+                          Note: Owner Name must match existing partners in the system. Diesel data can be uploaded independently.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </CardHeader>
               <CardContent>
                 {fileUploadError && (
