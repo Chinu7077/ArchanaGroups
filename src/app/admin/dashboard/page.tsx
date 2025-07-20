@@ -120,6 +120,7 @@ const AdminDashboard = () => {
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
+  const [clearPartners, setClearPartners] = useState(false);
   const [forceUpload, setForceUpload] = useState(false);
   const router = useRouter();
 
@@ -217,9 +218,13 @@ const AdminDashboard = () => {
   });
 
   const clearDataMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (clearPartners: boolean = false) => {
       const response = await fetch('/api/admin/clear-data', {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ clearPartners }),
       });
 
       if (!response.ok) {
@@ -230,9 +235,14 @@ const AdminDashboard = () => {
       return response.json();
     },
     onSuccess: (result) => {
-      toast.success(`Data cleared successfully! ${result.clearedRecords.dispatch} dispatch and ${result.clearedRecords.diesel} diesel records removed.`);
+      const message = result.clearedRecords.partners > 0 
+        ? `Everything cleared! ${result.clearedRecords.dispatch} dispatch, ${result.clearedRecords.diesel} diesel, and ${result.clearedRecords.partners} partner records removed.`
+        : `Data cleared! ${result.clearedRecords.dispatch} dispatch and ${result.clearedRecords.diesel} diesel records removed.`;
+      
+      toast.success(message);
       setClearDataDialogOpen(false);
       refetchStats();
+      refetchPartners();
     },
     onError: (error: Error) => {
       toast.error(`Failed to clear data: ${error.message}`);
@@ -1067,15 +1077,30 @@ const AdminDashboard = () => {
       <AlertDialog open={clearDataDialogOpen} onOpenChange={setClearDataDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Clear All Data</AlertDialogTitle>
+            <AlertDialogTitle>Clear Data</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to clear ALL dispatch and diesel data from the database?
+              Are you sure you want to clear data from the database?
               <br />
               <br />
               <strong className="text-red-600">⚠️ This action cannot be undone!</strong>
               <br />
               <br />
-              This will permanently remove all uploaded data and allow you to start fresh with new uploads.
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    id="clearPartners"
+                    checked={clearPartners}
+                    onChange={(e) => setClearPartners(e.target.checked)}
+                    className="rounded border-gray-300"
+                  />
+                  <label htmlFor="clearPartners" className="text-sm">
+                    Also clear all partners (recommended for fresh start)
+                  </label>
+                </div>
+              </div>
+              <br />
+              This will permanently remove all data and allow you to start completely fresh.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1083,13 +1108,13 @@ const AdminDashboard = () => {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => clearDataMutation.mutate()}
+              onClick={() => clearDataMutation.mutate(clearPartners)}
               disabled={clearDataMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
               {clearDataMutation.isPending
                 ? 'Clearing...'
-                : 'Clear All Data'}
+                : clearPartners ? 'Clear Everything' : 'Clear Data Only'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

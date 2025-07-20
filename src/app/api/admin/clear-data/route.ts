@@ -4,7 +4,9 @@ import { dispatchData, dieselData } from '@/config/db/schema';
 
 export async function POST(req: NextRequest) {
   try {
-    console.log('🧹 Clearing ALL data from database...');
+    const { clearPartners } = await req.json();
+    
+    console.log('🧹 Clearing data from database...');
 
     // Clear all dispatch data
     const dispatchResult = await db.delete(dispatchData);
@@ -14,12 +16,20 @@ export async function POST(req: NextRequest) {
     const dieselResult = await db.delete(dieselData);
     console.log(`🗑️  Cleared ${dieselResult.rowCount} diesel records`);
 
+    let partnersResult = { rowCount: 0 };
+    if (clearPartners) {
+      // Clear all partners (except admins)
+      partnersResult = await db.delete(partners);
+      console.log(`🗑️  Cleared ${partnersResult.rowCount} partner records`);
+    }
+
     return NextResponse.json({
       success: true,
-      message: 'All data cleared successfully',
+      message: clearPartners ? 'All data and partners cleared successfully' : 'All data cleared successfully',
       clearedRecords: {
         dispatch: dispatchResult.rowCount,
         diesel: dieselResult.rowCount,
+        partners: partnersResult.rowCount,
       },
     });
 
