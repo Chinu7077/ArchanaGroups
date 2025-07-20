@@ -118,6 +118,7 @@ const AdminDashboard = () => {
     null
   );
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<number>(0);
   const router = useRouter();
 
   // Get current user
@@ -309,17 +310,44 @@ const AdminDashboard = () => {
 
   const processFilesMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      const response = await fetch('/api/admin/process-files', {
-        method: 'POST',
-        body: formData,
-      });
+      // Simulate progress updates
+      const progressInterval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) return prev;
+          return prev + Math.random() * 10;
+        });
+      }, 500);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || errorData.error || 'Failed to process files');
+      try {
+        const response = await fetch('/api/admin/process-files', {
+          method: 'POST',
+          body: formData,
+        });
+
+        clearInterval(progressInterval);
+        setUploadProgress(100);
+
+        // Check if response is JSON
+        const contentType = response.headers.get('content-type');
+        if (!contentType || !contentType.includes('application/json')) {
+          throw new Error('Server returned non-JSON response. Please try again.');
+        }
+
+        if (!response.ok) {
+          try {
+            const errorData = await response.json();
+            throw new Error(errorData.message || errorData.error || 'Failed to process files');
+          } catch (parseError) {
+            throw new Error(`Server error (${response.status}): ${response.statusText}`);
+          }
+        }
+
+        return response.json();
+      } catch (error) {
+        clearInterval(progressInterval);
+        setUploadProgress(0);
+        throw error;
       }
-
-      return response.json();
     },
     onSuccess: (result: {
       success: boolean;
@@ -342,6 +370,7 @@ const AdminDashboard = () => {
       setDispatchFile(null);
       setDieselFile(null);
       setFileUploadError(null); // Clear any errors on success
+      setUploadProgress(0); // Reset progress
 
       // Reset file input elements
       const dispatchInput = document.getElementById(
@@ -357,10 +386,16 @@ const AdminDashboard = () => {
       refetchPartners();
     },
     onError: (error: Error) => {
-      console.log(JSON.stringify(error, null, 2));
-      setFileUploadError(error.message);
-      // Still show a brief toast for immediate feedback
-      toast.error('File validation failed. See details below.');
+      console.error('Upload error:', error);
+      
+      // Try to parse error message from response
+      let errorMessage = error.message;
+      if (error.message.includes('JSON')) {
+        errorMessage = 'Server error occurred. Please try again or contact support.';
+      }
+      
+      setFileUploadError(errorMessage);
+      toast.error('File upload failed. See details below.');
     },
   });
 
@@ -840,20 +875,30 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <div className="mt-6 flex justify-end">
-                  <Button
-                    onClick={handleUploadFiles}
-                    disabled={
-                      (!dispatchFile && !dieselFile) ||
-                      processFilesMutation.isPending
-                    }
-                    className="bg-primary hover:bg-primary/90"
-                  >
-                    <Upload className="mr-2 h-4 w-4" />
-                    {processFilesMutation.isPending
-                      ? 'Processing...'
-                      : 'Process Files'}
-                  </Button>
+                <div className="mt-6 space-y-4">
+                  {processFilesMutation.isPending && (
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ width: `${uploadProgress}%` }}
+                      ></div>
+                    </div>
+                  )}
+                  <div className="flex justify-end">
+                    <Button
+                      onClick={handleUploadFiles}
+                      disabled={
+                        (!dispatchFile && !dieselFile) ||
+                        processFilesMutation.isPending
+                      }
+                      className="bg-primary hover:bg-primary/90"
+                    >
+                      <Upload className="mr-2 h-4 w-4" />
+                      {processFilesMutation.isPending
+                        ? `Processing... ${Math.round(uploadProgress)}%`
+                        : 'Process Files'}
+                    </Button>
+                  </div>
                 </div>
               </CardContent>
             </Card>
