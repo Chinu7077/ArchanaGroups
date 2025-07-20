@@ -111,11 +111,11 @@ export default function AdminLoginPage() {
         {/* Back button */}
         <Button
           variant="ghost"
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/transport')}
           className="mb-4 flex items-center space-x-2 hover:bg-white/50"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Home</span>
+          <span>Back to Transport</span>
         </Button>
 
         <Card className="border-0 bg-white/80 shadow-2xl backdrop-blur-sm">

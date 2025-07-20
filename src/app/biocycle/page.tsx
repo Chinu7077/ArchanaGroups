@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useRef } from 'react';
 import Head from 'next/head'; // ✅ Added for SEO
+import { Download } from 'lucide-react';
 import AboutSection from '@/features/biocycle/components/AboutSection';
 import BioCycleFooter from '@/features/biocycle/components/BioCycleFooter';
 import BioCycleNavigation from '@/features/biocycle/components/BioCycleNavigation';
@@ -62,6 +63,17 @@ export default function BiomassWebsite() {
     if (element) {
       element.scrollIntoView({ behavior: 'smooth' });
     }
+  };
+
+  const handleDownloadProfile = () => {
+    // Create a link element to trigger download
+    const link = document.createElement('a');
+    link.href = '/ABC Profile (1).pdf'; // Update this path to your actual PDF file
+    link.download = 'ABC Profile (1).pdf';
+    link.target = '_blank';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   const getAnimationClass = (elementId: string, animationType = 'fade-up') => {
@@ -148,6 +160,18 @@ export default function BiomassWebsite() {
         <BiomassProcess getAnimationClass={getAnimationClass} />
         <Contact getAnimationClass={getAnimationClass} />
         <BioCycleFooter />
+
+        {/* Fixed Download Company Profile Button */}
+        <div className="fixed bottom-4 right-4 z-40">
+          <button
+            onClick={handleDownloadProfile}
+            className="flex items-center space-x-2 rounded-full bg-green-600 px-4 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:bg-green-700 hover:scale-105"
+            title="Download Company Profile"
+          >
+            <Download className="h-5 w-5" />
+            <span className="text-sm">Download Profile</span>
+          </button>
+        </div>
       </div>
     </div>
   );

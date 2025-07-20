@@ -23,7 +23,7 @@ import {
   FormLabel,
   FormMessage,
 } from '@/shared/components/ui/form';
-import { Truck, Eye, EyeOff, ArrowLeft } from 'lucide-react';
+import { Users, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 import { trpc } from '@/config/trpc/client';
 import { toast } from 'sonner';
 
@@ -93,13 +93,13 @@ export default function PartnerLoginPage() {
   };
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 via-white to-purple-50 p-4">
+    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-red-50 via-white to-red-100 p-4">
       {/* Background decorations */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute top-20 left-10 h-32 w-32 animate-pulse rounded-full bg-blue-200 opacity-20" />
-        <div className="absolute top-40 right-20 h-24 w-24 animate-pulse rounded-full bg-purple-200 opacity-20 delay-1000" />
-        <div className="absolute bottom-32 left-20 h-40 w-40 animate-pulse rounded-full bg-green-200 opacity-20 delay-2000" />
-        <div className="absolute right-10 bottom-20 h-28 w-28 animate-pulse rounded-full bg-red-200 opacity-20 delay-500" />
+        <div className="absolute top-20 left-10 h-32 w-32 animate-pulse rounded-full bg-red-200 opacity-20" />
+        <div className="absolute top-40 right-20 h-24 w-24 animate-pulse rounded-full bg-red-300 opacity-20 delay-1000" />
+        <div className="absolute bottom-32 left-20 h-40 w-40 animate-pulse rounded-full bg-red-100 opacity-20 delay-2000" />
+        <div className="absolute right-10 bottom-20 h-28 w-28 animate-pulse rounded-full bg-red-400 opacity-20 delay-500" />
       </div>
 
       <motion.div
@@ -111,19 +111,19 @@ export default function PartnerLoginPage() {
         {/* Back button */}
         <Button
           variant="ghost"
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/transport')}
           className="mb-4 flex items-center space-x-2 hover:bg-white/50"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Home</span>
+          <span>Back to Transport</span>
         </Button>
 
         <Card className="border-0 bg-white/80 shadow-2xl backdrop-blur-sm">
           <CardHeader className="pb-8 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-r from-blue-600 to-purple-600">
-              <Truck className="h-10 w-10 text-white" />
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-xl bg-gradient-to-r from-red-600 to-red-800">
+              <Users className="h-10 w-10 text-white" />
             </div>
-            <CardTitle className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-2xl font-bold text-transparent">
+            <CardTitle className="bg-gradient-to-r from-red-600 to-red-800 bg-clip-text text-2xl font-bold text-transparent">
               Partner Login
             </CardTitle>
             <CardDescription className="text-gray-600">
@@ -148,7 +148,7 @@ export default function PartnerLoginPage() {
                       <FormControl>
                         <Input
                           placeholder="e.g., AG1234"
-                          className="h-12 border-2 border-gray-200 transition-colors focus:border-blue-500"
+                          className="h-12 border-2 border-gray-200 transition-colors focus:border-red-500"
                           disabled={loginMutation.isPending}
                           {...field}
                         />
@@ -171,7 +171,7 @@ export default function PartnerLoginPage() {
                           <Input
                             type={showPassword ? 'text' : 'password'}
                             placeholder="Enter your password"
-                            className="h-12 border-2 border-gray-200 pr-12 transition-colors focus:border-blue-500"
+                            className="h-12 border-2 border-gray-200 pr-12 transition-colors focus:border-red-500"
                             disabled={loginMutation.isPending}
                             {...field}
                           />
@@ -197,7 +197,7 @@ export default function PartnerLoginPage() {
 
                 <Button
                   type="submit"
-                  className="h-12 w-full bg-gradient-to-r from-blue-600 to-purple-600 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:from-blue-700 hover:to-purple-700 hover:shadow-xl"
+                  className="h-12 w-full bg-gradient-to-r from-red-600 to-red-800 text-lg font-semibold text-white shadow-lg transition-all duration-300 hover:from-red-700 hover:to-red-900 hover:shadow-xl"
                   disabled={loginMutation.isPending}
                 >
                   {loginMutation.isPending ? (
@@ -212,8 +212,8 @@ export default function PartnerLoginPage() {
               </form>
             </Form>
 
-            <div className="mt-6 rounded-lg bg-blue-50 p-4">
-              <p className="text-sm text-blue-800">
+            <div className="mt-6 rounded-lg bg-red-50 p-4">
+              <p className="text-sm text-red-800">
                 <strong>Need help?</strong> Contact your administrator for your
                 Partner ID and password.
               </p>

@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Menu, X, Home } from 'lucide-react';
+import { Menu, X, Home, LogIn } from 'lucide-react';
 import Link from 'next/link';
 
 export default function TransportNavigation() {
@@ -73,30 +73,13 @@ export default function TransportNavigation() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="hidden items-center space-x-6 lg:flex"
           >
-            <button
-              onClick={() => scrollToSection('services')}
-              className="font-semibold text-gray-700 transition-colors hover:text-red-600"
+            <Link
+              href="/portal"
+              className="flex items-center space-x-2 rounded-lg bg-red-600 px-4 py-2 font-semibold text-white transition-colors hover:bg-red-700"
             >
-              Services
-            </button>
-            <button
-              onClick={() => scrollToSection('partners')}
-              className="font-semibold text-gray-700 transition-colors hover:text-red-600"
-            >
-              Clients
-            </button>
-            <button
-              onClick={() => scrollToSection('gallery')}
-              className="font-semibold text-gray-700 transition-colors hover:text-red-600"
-            >
-              Gallery
-            </button>
-            <button
-              onClick={() => scrollToSection('contact')}
-              className="font-semibold text-gray-700 transition-colors hover:text-red-600"
-            >
-              Contact
-            </button>
+              <LogIn className="h-4 w-4" />
+              <span>Login Portal</span>
+            </Link>
           </motion.div>
 
           {/* Mobile Menu Toggle Button */}
@@ -117,33 +100,29 @@ export default function TransportNavigation() {
             className="lg:hidden"
           >
             <div className="space-y-2 rounded-b-2xl border-t border-gray-200 bg-white px-2 pt-2 pb-4 text-sm shadow-lg">
-              <button
-                onClick={() => scrollToSection('services')}
-                className="block w-full rounded-xl px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-red-600"
-              >
-                Services
-              </button>
-              <button
-                onClick={() => scrollToSection('partners')}
-                className="block w-full rounded-xl px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-red-600"
-              >
-                Partners
-              </button>
-              <button
-                onClick={() => scrollToSection('gallery')}
-                className="block w-full rounded-xl px-4 py-3 text-left font-medium text-gray-700 transition-colors hover:bg-gray-50 hover:text-red-600"
-              >
-                Gallery
-              </button>
-              <button
-                onClick={() => scrollToSection('contact')}
+              <Link
+                href="/portal"
                 className="mx-4 block w-full rounded-xl bg-red-600 px-4 py-3 text-center font-semibold text-white shadow-lg transition-colors hover:bg-red-700"
               >
-                Contact
-              </button>
+                <div className="flex items-center justify-center space-x-2">
+                  <LogIn className="h-4 w-4" />
+                  <span>Login Portal</span>
+                </div>
+              </Link>
             </div>
           </motion.div>
         )}
+      </div>
+
+      {/* Fixed Mobile Login Portal Button */}
+      <div className="fixed bottom-4 right-4 z-40 lg:hidden">
+        <Link
+          href="/portal"
+          className="flex items-center space-x-2 rounded-full bg-red-600 px-4 py-3 font-semibold text-white shadow-lg transition-all duration-300 hover:bg-red-700 hover:scale-105"
+        >
+          <LogIn className="h-5 w-5" />
+          <span className="text-sm">Login Portal</span>
+        </Link>
       </div>
     </nav>
   );

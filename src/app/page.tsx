@@ -1,6 +1,5 @@
 'use client';
 
-import HomeNavigation from '@/shared/components/HomeNavigation';
 import { motion } from 'framer-motion';
 import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
@@ -47,7 +46,6 @@ export default function HomePage() {
     <>
       <Suspense fallback={<PageSkeleton />}>
         <div className="h-screen overflow-y-scroll">
-          <HomeNavigation />
           <main className="relative min-h-screen overflow-hidden bg-gradient-to-br from-blue-50 via-white to-purple-50">
             <div className="absolute inset-0 overflow-hidden">
               <div className="absolute top-20 left-10 h-32 w-32 animate-pulse rounded-full bg-blue-200 opacity-20" />
@@ -189,11 +187,11 @@ export default function HomePage() {
                     <div className="relative bg-gradient-to-br from-green-600 via-green-700 to-green-800 p-8 text-white">
                       <div className="absolute top-0 right-0 h-40 w-40 translate-x-20 -translate-y-20 rounded-full bg-white/10" />
                       <div className="relative z-10 text-center">
-                        <div className="mx-auto mb-4 flex h-[100px] w-[220px] items-center justify-center rounded-xl bg-white/50 shadow-md backdrop-blur-sm transition-transform duration-500 group-hover:scale-105">
+                        <div className="mx-auto mb-4 flex h-32 w-48 items-center justify-center rounded-xl bg-white/60 shadow-md backdrop-blur-sm transition-transform duration-500 group-hover:scale-105">
                           <img
                             src="/ABC.png"
                             alt="Archana BioCycle"
-                            className="h-44 object-contain"
+                            className="h-24 w-40 object-contain"
                           />
                         </div>
                         <h3 className="mb-2 text-3xl font-bold">

@@ -17,13 +17,6 @@ export default function TransportPartners() {
   const handlePause = () => {
     if (containerRef.current) {
       containerRef.current.style.animationPlayState = 'paused';
-
-      // Auto-resume after 2 seconds (for mobile tap)
-      setTimeout(() => {
-        if (containerRef.current) {
-          containerRef.current.style.animationPlayState = 'running';
-        }
-      }, 2000);
     }
   };
 
@@ -43,7 +36,7 @@ export default function TransportPartners() {
         <div className="relative w-full overflow-hidden">
           <div
             ref={containerRef}
-            className="animate-scroll flex gap-6"
+            className="flex gap-6"
             style={{
               animation: 'scroll 25s linear infinite',
               width: 'max-content',
@@ -66,6 +59,10 @@ export default function TransportPartners() {
                     fill
                     style={{ objectFit: 'contain' }}
                     priority
+                    onError={(e) => {
+                      const target = e.target as HTMLImageElement;
+                      target.style.display = 'none';
+                    }}
                   />
                 </div>
                 <p className="mt-2 line-clamp-2 w-28 text-center text-xs leading-tight font-medium text-gray-600 md:w-auto md:text-sm">

@@ -106,6 +106,14 @@ export default function TransportFooter() {
               </li>
               <li>
                 <button
+                  onClick={() => scrollToSection('partners')}
+                  className="text-base text-gray-300 transition-colors hover:text-white"
+                >
+                  Clients
+                </button>
+              </li>
+              <li>
+                <button
                   onClick={() => scrollToSection('gallery')}
                   className="text-base text-gray-300 transition-colors hover:text-white"
                 >
@@ -119,6 +127,14 @@ export default function TransportFooter() {
                 >
                   Contact
                 </button>
+              </li>
+              <li>
+                <a
+                  href="/portal"
+                  className="text-base text-gray-300 transition-colors hover:text-white"
+                >
+                  Portal
+                </a>
               </li>
             </ul>
           </div>

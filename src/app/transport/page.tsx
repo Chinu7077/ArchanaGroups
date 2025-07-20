@@ -17,7 +17,7 @@ export default function TransportPage() {
   }, []);
 
   return (
-    <main className="scrollbar-red min-h-screen overflow-x-hidden bg-white">
+    <div className="scrollbar-transport h-screen overflow-x-hidden overflow-y-scroll">
       {/* ✅ SEO META TAGS */}
       <Head>
         <title>Archana Transport | Fly Ash & Red Mud Logistics in Odisha</title>
@@ -54,6 +54,6 @@ export default function TransportPage() {
       <TransportPartners />
       <TransportContact />
       <TransportFooter />
-    </main>
+    </div>
   );
 }
