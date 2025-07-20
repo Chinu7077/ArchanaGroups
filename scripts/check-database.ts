@@ -1,42 +1,38 @@
-import { loadEnvConfig } from '@next/env';
 import { db } from '../src/config/db';
 import { dispatchData, dieselData, partners } from '../src/config/db/schema';
 
-// Load environment variables like Next.js does
-loadEnvConfig(process.cwd());
-
 async function checkDatabase() {
   try {
-    console.log('🔍 Checking database contents...\n');
+    console.log('🔍 Checking database contents...');
 
     // Check partners
     const allPartners = await db.query.partners.findMany();
-    console.log(`👥 Partners: ${allPartners.length}`);
+    console.log(`👥 Partners found: ${allPartners.length}`);
     allPartners.forEach(partner => {
-      console.log(`  - ${partner.name} (${partner.partnerId})`);
+      console.log(`   - ${partner.name} (${partner.partnerId})`);
     });
 
     // Check dispatch data
-    const allDispatch = await db.query.dispatchData.findMany({
-      orderBy: (dispatchData, { desc }) => [desc(dispatchData.createdAt)],
-      limit: 10
-    });
-    console.log(`\n📦 Dispatch Records: ${allDispatch.length} (showing latest 10)`);
-    allDispatch.forEach(dispatch => {
-      console.log(`  - ${dispatch.date} | ${dispatch.vehicleNumber} | ${dispatch.material} | ${dispatch.quantity} | ${dispatch.ownerName}`);
-    });
+    const allDispatchData = await db.query.dispatchData.findMany();
+    console.log(`📦 Dispatch records found: ${allDispatchData.length}`);
+    if (allDispatchData.length > 0) {
+      console.log('   Sample dispatch records:');
+      allDispatchData.slice(0, 3).forEach(record => {
+        console.log(`   - ${record.date}: ${record.vehicleNumber} - ${record.material} - ${record.quantity} M.T`);
+      });
+    }
 
     // Check diesel data
-    const allDiesel = await db.query.dieselData.findMany({
-      orderBy: (dieselData, { desc }) => [desc(dieselData.createdAt)],
-      limit: 10
-    });
-    console.log(`\n⛽ Diesel Records: ${allDiesel.length} (showing latest 10)`);
-    allDiesel.forEach(diesel => {
-      console.log(`  - ${diesel.date} | ${diesel.vehicleNumber} | ${diesel.volume} | ${diesel.item} | ${diesel.fuelStation}`);
-    });
+    const allDieselData = await db.query.dieselData.findMany();
+    console.log(`⛽ Diesel records found: ${allDieselData.length}`);
+    if (allDieselData.length > 0) {
+      console.log('   Sample diesel records:');
+      allDieselData.slice(0, 3).forEach(record => {
+        console.log(`   - ${record.date}: ${record.vehicleNumber} - ${record.volume} L - ${record.fuelStation}`);
+      });
+    }
 
-    console.log('\n✅ Database check complete!');
+    console.log('✅ Database check completed!');
 
   } catch (error) {
     console.error('❌ Error checking database:', error);

@@ -1,10 +1,9 @@
 'use client';
 
 import { motion } from 'framer-motion';
-import { ArrowRight, LogOut, User, Shield } from 'lucide-react';
+import { ArrowRight } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { Suspense, useEffect, useState } from 'react';
-import { Button } from '@/shared/components/ui/button';
+import { Suspense } from 'react';
 
 function PageSkeleton() {
   return (
@@ -28,25 +27,6 @@ function PageSkeleton() {
 
 export default function HomePage() {
   const router = useRouter();
-  const [session, setSession] = useState<any>(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const response = await fetch('/api/trpc/auth.checkAuth');
-        const data = await response.json();
-        console.log('🔐 Session check result:', data);
-        setSession(data.result?.data);
-        setLoading(false);
-      } catch (error) {
-        console.error('❌ Session check error:', error);
-        setLoading(false);
-      }
-    };
-
-    checkSession();
-  }, []);
 
   const handleTransportNavigation = () => {
     router.push('/transport');
@@ -60,28 +40,6 @@ export default function HomePage() {
     setTimeout(() => {
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }, 100);
-  };
-
-  const handleLogout = async () => {
-    try {
-      console.log('🚪 Logging out...');
-      const response = await fetch('/api/auth/logout', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-      });
-      
-      if (response.ok) {
-        console.log('✅ Logged out successfully');
-        // Force page reload to clear any cached state
-        window.location.reload();
-      } else {
-        console.error('❌ Logout failed');
-      }
-    } catch (error) {
-      console.error('❌ Logout error:', error);
-    }
   };
 
   return (
@@ -102,62 +60,6 @@ export default function HomePage() {
               transition={{ duration: 0.8 }}
               className="relative z-10 px-4 py-16"
             >
-              {/* Session Status and Logout Button */}
-              <div className="absolute top-4 right-4 flex items-center gap-2">
-                {!loading && (
-                  <div className="flex items-center gap-2 rounded-lg bg-white/80 px-3 py-2 backdrop-blur-sm">
-                    {session?.authenticated ? (
-                      <>
-                        {session.user?.role === 'admin' ? (
-                          <Shield size={16} className="text-red-600" />
-                        ) : (
-                          <User size={16} className="text-blue-600" />
-                        )}
-                        <span className="text-sm font-medium">
-                          {session.user?.role === 'admin' ? 'Admin' : 'Partner'}: {session.user?.username || session.user?.partnerId || session.user?.id}
-                        </span>
-                      </>
-                    ) : (
-                      <span className="text-sm text-gray-600">Not logged in</span>
-                    )}
-                  </div>
-                )}
-                <Button
-                  onClick={handleLogout}
-                  variant="outline"
-                  size="sm"
-                  className="flex items-center gap-2 bg-white/80 backdrop-blur-sm hover:bg-white/90"
-                >
-                  <LogOut size={16} />
-                  Logout
-                </Button>
-              </div>
-              
-              {/* Login Navigation */}
-              {!loading && !session?.authenticated && (
-                <div className="absolute top-4 left-4 flex items-center gap-2">
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => router.push('/auth/partner-login')}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 bg-red-50 border-red-200 text-red-700 hover:bg-red-100"
-                    >
-                      <User size={16} />
-                      Partner Login
-                    </Button>
-                    <Button
-                      onClick={() => router.push('/auth/admin-login')}
-                      variant="outline"
-                      size="sm"
-                      className="flex items-center gap-2 bg-slate-50 border-slate-200 text-slate-700 hover:bg-slate-100"
-                    >
-                      <Shield size={16} />
-                      Admin Login
-                    </Button>
-                  </div>
-                </div>
-              )}
               <div className="mx-auto max-w-5xl text-center">
                 <motion.div
                   initial={{ opacity: 0, scale: 0.8 }}

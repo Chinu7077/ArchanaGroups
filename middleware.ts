@@ -26,17 +26,13 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/api/') ||
     pathname.startsWith('/_next/') ||
     pathname.startsWith('/static/') ||
-    pathname.startsWith('/test-files.html') ||
-    pathname.startsWith('/debug-upload.html') ||
     pathname.includes('.') // Skip files with extensions
   ) {
-    console.log(`⏭️  Skipping middleware for: ${pathname}`);
     return NextResponse.next();
   }
 
   // Get session from cookies
   const session = await verifySession();
-  console.log(`🔐 Session check for ${pathname}:`, session ? `User ${session.userId} (${session.role})` : 'No session');
 
   // Check if the current route is protected using optimized function
   const isProtectedRoute = isRouteMatch(pathname, protectedRoutes);
@@ -44,18 +40,8 @@ export async function middleware(request: NextRequest) {
   const isAdminRoute = isRouteMatch(pathname, adminRoutes);
   const isPartnerRoute = isRouteMatch(pathname, partnerRoutes);
 
-  console.log(`🛡️  Route protection check:`, {
-    pathname,
-    isProtectedRoute,
-    isAuthRoute,
-    isAdminRoute,
-    isPartnerRoute,
-    hasSession: !!session?.userId
-  });
-
   // If user is not authenticated and trying to access protected routes
   if (isProtectedRoute && !session?.userId) {
-    console.log(`🚫 Unauthorized access attempt to ${pathname} - redirecting to login`);
     // Redirect to appropriate login page based on route
     if (isAdminRoute) {
       return NextResponse.redirect(new URL('/auth/admin-login', request.url));

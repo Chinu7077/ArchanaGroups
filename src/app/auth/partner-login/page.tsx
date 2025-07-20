@@ -76,22 +76,14 @@ export default function PartnerLoginPage() {
   const utils = trpc.useUtils();
   const loginMutation = trpc.auth.partnerLogin.useMutation({
     onSuccess: (data) => {
-      console.log('✅ Partner login successful:', data);
       toast.success(`Welcome back, ${data.user?.name || 'Partner'}`);
-      
-      // Force a small delay to ensure session is set
-      setTimeout(() => {
-        // Invalidate auth queries to update state immediately
-        utils.auth.getUser.invalidate();
-        utils.auth.checkAuth.invalidate();
-        
-        // Use replace to prevent back navigation to login
-        console.log('🔄 Redirecting to partner dashboard...');
-        router.replace('/partner/dashboard');
-      }, 500);
+      // Invalidate auth queries to update state immediately
+      utils.auth.getUser.invalidate();
+      utils.auth.checkAuth.invalidate();
+      // Use replace to prevent back navigation to login
+      router.replace('/partner/dashboard');
     },
     onError: (error) => {
-      console.error('❌ Partner login error:', error);
       toast.error(`Login failed: ${error.message}`);
     },
   });
@@ -119,11 +111,11 @@ export default function PartnerLoginPage() {
         {/* Back button */}
         <Button
           variant="ghost"
-          onClick={() => router.push('/')}
+          onClick={() => router.push('/transport')}
           className="mb-4 flex items-center space-x-2 hover:bg-white/50"
         >
           <ArrowLeft className="h-4 w-4" />
-          <span>Back to Home</span>
+          <span>Back to Transport</span>
         </Button>
 
         <Card className="border-0 bg-white/80 shadow-2xl backdrop-blur-sm">
@@ -137,9 +129,6 @@ export default function PartnerLoginPage() {
             <CardDescription className="text-gray-600">
               Access your transportation data dashboard
             </CardDescription>
-            <div className="mt-2 text-xs text-red-600 font-medium">
-              PARTNER PORTAL - TRANSPORT DATA ACCESS
-            </div>
           </CardHeader>
 
           <CardContent>
@@ -220,14 +209,6 @@ export default function PartnerLoginPage() {
                     'Sign In'
                   )}
                 </Button>
-                
-                {loginMutation.isPending && (
-                  <div className="mt-4 text-center">
-                    <p className="text-sm text-red-600">
-                      Please wait while we authenticate you...
-                    </p>
-                  </div>
-                )}
               </form>
             </Form>
 
@@ -236,19 +217,6 @@ export default function PartnerLoginPage() {
                 <strong>Need help?</strong> Contact your administrator for your
                 Partner ID and password.
               </p>
-            </div>
-            
-            {/* Navigation to other login */}
-            <div className="mt-4 text-center">
-              <p className="text-xs text-gray-500 mb-2">Need admin access?</p>
-              <Button
-                variant="link"
-                size="sm"
-                onClick={() => router.push('/auth/admin-login')}
-                className="text-xs text-slate-600 hover:text-slate-800"
-              >
-                Go to Admin Login →
-              </Button>
             </div>
           </CardContent>
         </Card>

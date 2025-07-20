@@ -198,34 +198,17 @@ const PartnerDashboard = () => {
 
   // Redirect if not authenticated
   useEffect(() => {
-    console.log('🔍 Partner dashboard auth check:', { user, userLoading });
     if (!userLoading && !user) {
-      console.log('🚫 No user found, redirecting to partner login');
       router.push('/auth/partner-login');
     }
   }, [user, userLoading, router]);
 
-  // Show loading state
-  if (userLoading) {
+  if (userLoading || !user) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Loading dashboard...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if no user after loading
-  if (!user) {
-    return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">Authentication required</div>
-          <Button onClick={() => router.push('/auth/partner-login')}>
-            Go to Login
-          </Button>
+          <span>Loading...</span>
         </div>
       </div>
     );
@@ -613,12 +596,6 @@ const PartnerDashboard = () => {
                             </TableHead>
                             <TableHead className="font-semibold text-red-900 py-4">
                               <div className="flex items-center space-x-2">
-                                <Package className="h-4 w-4" />
-                                <span>Item</span>
-                              </div>
-                            </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
-                              <div className="flex items-center space-x-2">
                                 <Building2 className="h-4 w-4" />
                                 <span>Fuel Station</span>
                               </div>
@@ -648,11 +625,6 @@ const PartnerDashboard = () => {
                               <TableCell className="py-4">
                                 <Badge variant="outline" className="font-mono bg-black text-white border-black hover:bg-gray-800">
                                   {parseFloat(item.volume).toFixed(0)} L
-                                </Badge>
-                              </TableCell>
-                              <TableCell className="py-4">
-                                <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
-                                  {item.item}
                                 </Badge>
                               </TableCell>
                               <TableCell className="py-4">

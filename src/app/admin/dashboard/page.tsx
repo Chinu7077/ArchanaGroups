@@ -118,24 +118,10 @@ const AdminDashboard = () => {
     null
   );
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
-  const [clearDataDialogOpen, setClearDataDialogOpen] = useState(false);
-  const [clearPartners, setClearPartners] = useState(false);
-  const [forceUpload, setForceUpload] = useState(false);
-  const [testFile, setTestFile] = useState<File | null>(null);
   const router = useRouter();
 
   // Get current user
   const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery();
-
-  // Redirect if not authenticated or not admin
-  useEffect(() => {
-    console.log('🔍 Admin dashboard auth check:', { user, userLoading });
-    if (!userLoading && (!user || user.role !== 'admin')) {
-      console.log('🚫 No admin user found, redirecting to admin login');
-      router.push('/auth/admin-login');
-    }
-  }, [user, userLoading, router]);
 
   // Get partner statistics
   const {
@@ -227,99 +213,6 @@ const AdminDashboard = () => {
     },
   });
 
-  const clearDataMutation = useMutation({
-    mutationFn: async (clearPartners: boolean = false) => {
-      const response = await fetch('/api/admin/clear-data', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ clearPartners }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to clear data');
-      }
-
-      return response.json();
-    },
-    onSuccess: (result) => {
-      const message = result.clearedRecords.partners > 0 
-        ? `Everything cleared! ${result.clearedRecords.dispatch} dispatch, ${result.clearedRecords.diesel} diesel, and ${result.clearedRecords.partners} partner records removed.`
-        : `Data cleared! ${result.clearedRecords.dispatch} dispatch and ${result.clearedRecords.diesel} diesel records removed.`;
-      
-      toast.success(message);
-      setClearDataDialogOpen(false);
-      refetchStats();
-      refetchPartners();
-    },
-    onError: (error: Error) => {
-      toast.error(`Failed to clear data: ${error.message}`);
-    },
-  });
-
-  const testFileMutation = useMutation({
-    mutationFn: async (file: File) => {
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const response = await fetch('/api/admin/test-file', {
-        method: 'POST',
-        body: formData,
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to test file');
-      }
-
-      return response.json();
-    },
-    onSuccess: (result) => {
-      console.log('✅ File test successful:', result);
-      toast.success(`File test successful! ${result.fileInfo.totalRows} rows, ${result.fileInfo.totalColumns} columns`);
-      console.log('📋 Headers:', result.headers);
-      console.log('👀 Preview:', result.preview);
-    },
-    onError: (error: Error) => {
-      console.error('❌ File test failed:', error);
-      toast.error(`File test failed: ${error.message}`);
-    },
-  });
-
-  const simpleUploadMutation = useMutation({
-    mutationFn: async (formData: FormData) => {
-      console.log('🧪 Starting simple upload test...');
-      
-      const response = await fetch('/api/admin/simple-upload', {
-        method: 'POST',
-        body: formData,
-      });
-
-      console.log('📥 Simple upload response:', {
-        status: response.status,
-        statusText: response.statusText,
-        ok: response.ok
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Simple upload failed');
-      }
-
-      return response.json();
-    },
-    onSuccess: (result) => {
-      console.log('✅ Simple upload successful:', result);
-      toast.success('Simple upload test successful! Files received by server.');
-    },
-    onError: (error: Error) => {
-      console.error('❌ Simple upload failed:', error);
-      toast.error(`Simple upload failed: ${error.message}`);
-    },
-  });
-
   const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -402,121 +295,31 @@ const AdminDashboard = () => {
     fileType: 'dispatch' | 'diesel'
   ) => {
     const file = event.target.files?.[0];
-    console.log(`📁 File selected for ${fileType}:`, file ? {
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      lastModified: file.lastModified
-    } : 'No file');
-    
     if (file) {
       // Clear any previous errors when new files are selected
       setFileUploadError(null);
       
-      // Validate file format
-      const isValidFormat = file.name.match(/\.(xlsx|xls)$/i);
-      const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
-      
-      console.log(`🔍 File validation for ${file.name}:`);
-      console.log(`  - Format check: ${isValidFormat ? '✅' : '❌'} (extension: ${file.name.split('.').pop()})`);
-      console.log(`  - Size check: ${isValidSize ? '✅' : '❌'} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
-      console.log(`  - MIME type: ${file.type}`);
-      
-      if (!isValidFormat) {
-        const errorMsg = `Invalid file format: ${file.name}. Please select an Excel file (.xlsx or .xls). Current extension: ${file.name.split('.').pop()}`;
-        console.error(`❌ ${errorMsg}`);
-        setFileUploadError(errorMsg);
-        return;
-      }
-      
-      if (!isValidSize) {
-        const errorMsg = `File too large: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB`;
-        console.error(`❌ ${errorMsg}`);
-        setFileUploadError(errorMsg);
-        return;
-      }
-      
-      console.log(`✅ File validated successfully: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${file.type})`);
-      
       if (fileType === 'dispatch') {
         setDispatchFile(file);
-        console.log(`📦 Dispatch file set: ${file.name}`);
       } else {
         setDieselFile(file);
-        console.log(`⛽ Diesel file set: ${file.name}`);
       }
     }
   };
 
   const processFilesMutation = useMutation({
     mutationFn: async (formData: FormData) => {
-      console.log('🔄 Starting file upload mutation...');
-      
-      // Log FormData contents
-      console.log('📋 FormData contents:');
-      for (let [key, value] of formData.entries()) {
-        if (value instanceof File) {
-          console.log(`  ${key}: File(${value.name}, ${value.size} bytes, ${value.type})`);
-        } else {
-          console.log(`  ${key}: ${value}`);
-        }
+      const response = await fetch('/api/admin/process-files', {
+        method: 'POST',
+        body: formData,
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || errorData.error || 'Failed to process files');
       }
-      
-      // Simulate progress updates
-      const progressInterval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) return prev;
-          return prev + Math.random() * 10;
-        });
-      }, 500);
 
-      try {
-        console.log('📤 Sending request to /api/admin/process-files...');
-        const response = await fetch('/api/admin/process-files', {
-          method: 'POST',
-          body: formData,
-        });
-
-        clearInterval(progressInterval);
-        setUploadProgress(100);
-
-        console.log('📥 Response received:', {
-          status: response.status,
-          statusText: response.statusText,
-          contentType: response.headers.get('content-type'),
-          ok: response.ok
-        });
-
-        // Check if response is JSON
-        const contentType = response.headers.get('content-type');
-        if (!contentType || !contentType.includes('application/json')) {
-          console.error('❌ Non-JSON response received');
-          const textResponse = await response.text();
-          console.error('Response text:', textResponse);
-          throw new Error('Server returned non-JSON response. Please try again.');
-        }
-
-        if (!response.ok) {
-          try {
-            const errorData = await response.json();
-            console.error('❌ Server error response:', errorData);
-            const errorMessage = errorData.message || errorData.error || `Server error (${response.status})`;
-            throw new Error(errorMessage);
-          } catch (parseError) {
-            console.error('❌ Error parsing error response:', parseError);
-            throw new Error(`Server error (${response.status}): ${response.statusText}`);
-          }
-        }
-
-        const result = await response.json();
-        console.log('✅ Upload successful:', result);
-        return result;
-      } catch (error) {
-        clearInterval(progressInterval);
-        setUploadProgress(0);
-        console.error('❌ Upload mutation failed:', error);
-        throw error;
-      }
+      return response.json();
     },
     onSuccess: (result: {
       success: boolean;
@@ -539,7 +342,6 @@ const AdminDashboard = () => {
       setDispatchFile(null);
       setDieselFile(null);
       setFileUploadError(null); // Clear any errors on success
-      setUploadProgress(0); // Reset progress
 
       // Reset file input elements
       const dispatchInput = document.getElementById(
@@ -555,68 +357,30 @@ const AdminDashboard = () => {
       refetchPartners();
     },
     onError: (error: Error) => {
-      console.error('❌ Upload error:', error);
-      
-      // Try to parse error message from response
-      let errorMessage = error.message;
-      if (error.message.includes('JSON')) {
-        errorMessage = 'Server error occurred. Please try again or contact support.';
-      }
-      
-      // Add more context to the error
-      const detailedError = `Upload Error: ${errorMessage}\n\nPlease check:\n1. File format (.xlsx or .xls)\n2. File size (under 10MB)\n3. File content (not empty)\n4. Browser console for more details`;
-      
-      setFileUploadError(detailedError);
-      setUploadProgress(0);
-      
-      // Also show a toast with the error
-      toast.error(`Upload failed: ${errorMessage}`);
+      console.log(JSON.stringify(error, null, 2));
+      setFileUploadError(error.message);
+      // Still show a brief toast for immediate feedback
+      toast.error('File validation failed. See details below.');
     },
   });
 
   const handleUploadFiles = async () => {
-    console.log('🚀 Starting file upload process...');
-    
     if (!dispatchFile && !dieselFile) {
-      console.error('❌ No files selected for upload');
       toast.error('Please select at least one file to upload');
       return;
     }
-
-    console.log('📁 Files to upload:', {
-      dispatchFile: dispatchFile ? {
-        name: dispatchFile.name,
-        size: dispatchFile.size,
-        type: dispatchFile.type
-      } : null,
-      dieselFile: dieselFile ? {
-        name: dieselFile.name,
-        size: dieselFile.size,
-        type: dieselFile.type
-      } : null,
-      forceUpload
-    });
 
     try {
       const formData = new FormData();
       if (dispatchFile) {
         formData.append('dispatchFile', dispatchFile);
-        console.log(`📦 Added dispatch file to FormData: ${dispatchFile.name}`);
       }
       if (dieselFile) {
         formData.append('dieselFile', dieselFile);
-        console.log(`⛽ Added diesel file to FormData: ${dieselFile.name}`);
-      }
-      if (forceUpload) {
-        formData.append('forceUpload', 'true');
-        console.log('🔄 Force upload enabled');
       }
 
-      console.log('📤 Sending FormData to server...');
       await processFilesMutation.mutateAsync(formData);
-    } catch (error) {
-      console.error('❌ Upload failed:', error);
-    }
+    } catch (error) {}
   };
 
   const handleDownloadCredentials = async () => {
@@ -663,27 +427,12 @@ const AdminDashboard = () => {
     }
   }, [user, userLoading, router]);
 
-  // Show loading state
-  if (userLoading) {
+  if (userLoading || !user) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Loading admin dashboard...</span>
-        </div>
-      </div>
-    );
-  }
-
-  // Show error state if no user or not admin after loading
-  if (!user || user.role !== 'admin') {
-    return (
-      <div className="bg-background flex min-h-screen items-center justify-center">
-        <div className="text-center">
-          <div className="text-red-600 mb-4">Admin access required</div>
-          <Button onClick={() => router.push('/auth/admin-login')}>
-            Go to Admin Login
-          </Button>
+          <span>Loading...</span>
         </div>
       </div>
     );
@@ -1013,11 +762,8 @@ const AdminDashboard = () => {
                   <Alert variant="destructive" className="mb-6 relative">
                     <AlertTriangle className="h-4 w-4" />
                     <AlertDescription className="ml-2 pr-8 text-sm">
-                      <strong>Upload Error:</strong>
-                      <div className="mt-2 whitespace-pre-wrap text-sm">{fileUploadError}</div>
-                      <div className="mt-2 text-xs text-red-600">
-                        Please check your file format and try again. Files must be Excel (.xlsx or .xls) and less than 10MB.
-                      </div>
+                      <strong>Validation Error:</strong>
+                      <div className="mt-2 whitespace-pre-wrap">{fileUploadError}</div>
                     </AlertDescription>
                     <button
                       onClick={() => setFileUploadError(null)}
@@ -1094,94 +840,20 @@ const AdminDashboard = () => {
                     </div>
                   </div>
                 </div>
-                <div className="mt-6 space-y-4">
-                  {processFilesMutation.isPending && (
-                    <div className="w-full bg-gray-200 rounded-full h-2">
-                      <div 
-                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
-                        style={{ width: `${uploadProgress}%` }}
-                      ></div>
-                    </div>
-                  )}
-                                  <div className="flex flex-col gap-4">
-                  <div className="flex items-center gap-2">
-                    <input
-                      type="checkbox"
-                      id="forceUpload"
-                      checked={forceUpload}
-                      onChange={(e) => setForceUpload(e.target.checked)}
-                      className="rounded border-gray-300"
-                    />
-                    <label htmlFor="forceUpload" className="text-sm text-gray-600">
-                      Force upload (skip duplicate checking)
-                    </label>
-                  </div>
-                  
-                  <div className="border-t pt-4">
-                    <h4 className="text-sm font-medium mb-2">Test File (Optional)</h4>
-                    <div className="flex items-center gap-2">
-                      <Input
-                        type="file"
-                        accept=".xlsx,.xls"
-                        onChange={(e) => setTestFile(e.target.files?.[0] || null)}
-                        className="max-w-xs"
-                      />
-                      <Button
-                        onClick={() => testFile && testFileMutation.mutate(testFile)}
-                        disabled={!testFile || testFileMutation.isPending}
-                        variant="outline"
-                        size="sm"
-                      >
-                        {testFileMutation.isPending ? 'Testing...' : 'Test File'}
-                      </Button>
-                    </div>
-                  </div>
-                    
-                    <div className="flex justify-between items-center">
-                      <Button
-                        onClick={() => setClearDataDialogOpen(true)}
-                        variant="destructive"
-                        disabled={clearDataMutation.isPending}
-                        className="bg-red-600 hover:bg-red-700"
-                      >
-                        <Trash2 className="mr-2 h-4 w-4" />
-                        {clearDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
-                      </Button>
-                      
-                      <div className="flex gap-2">
-                        <Button
-                          onClick={() => {
-                            const formData = new FormData();
-                            if (dispatchFile) formData.append('dispatchFile', dispatchFile);
-                            if (dieselFile) formData.append('dieselFile', dieselFile);
-                            simpleUploadMutation.mutate(formData);
-                          }}
-                          disabled={
-                            (!dispatchFile && !dieselFile) ||
-                            simpleUploadMutation.isPending
-                          }
-                          variant="outline"
-                          size="sm"
-                        >
-                          {simpleUploadMutation.isPending ? 'Testing...' : 'Test Upload'}
-                        </Button>
-                        
-                        <Button
-                          onClick={handleUploadFiles}
-                          disabled={
-                            (!dispatchFile && !dieselFile) ||
-                            processFilesMutation.isPending
-                          }
-                          className="bg-primary hover:bg-primary/90"
-                        >
-                          <Upload className="mr-2 h-4 w-4" />
-                          {processFilesMutation.isPending
-                            ? `Processing... ${Math.round(uploadProgress)}%`
-                            : 'Process Files'}
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
+                <div className="mt-6 flex justify-end">
+                  <Button
+                    onClick={handleUploadFiles}
+                    disabled={
+                      (!dispatchFile && !dieselFile) ||
+                      processFilesMutation.isPending
+                    }
+                    className="bg-primary hover:bg-primary/90"
+                  >
+                    <Upload className="mr-2 h-4 w-4" />
+                    {processFilesMutation.isPending
+                      ? 'Processing...'
+                      : 'Process Files'}
+                  </Button>
                 </div>
               </CardContent>
             </Card>
@@ -1252,52 +924,6 @@ const AdminDashboard = () => {
               {deletePartnerMutation.isPending
                 ? 'Deleting...'
                 : 'Delete Partner'}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-
-      <AlertDialog open={clearDataDialogOpen} onOpenChange={setClearDataDialogOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Clear Data</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to clear data from the database?
-              <br />
-              <br />
-              <strong className="text-red-600">⚠️ This action cannot be undone!</strong>
-              <br />
-              <br />
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <input
-                    type="checkbox"
-                    id="clearPartners"
-                    checked={clearPartners}
-                    onChange={(e) => setClearPartners(e.target.checked)}
-                    className="rounded border-gray-300"
-                  />
-                  <label htmlFor="clearPartners" className="text-sm">
-                    Also clear all partners (recommended for fresh start)
-                  </label>
-                </div>
-              </div>
-              <br />
-              This will permanently remove all data and allow you to start completely fresh.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel onClick={() => setClearDataDialogOpen(false)}>
-              Cancel
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => clearDataMutation.mutate(clearPartners)}
-              disabled={clearDataMutation.isPending}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              {clearDataMutation.isPending
-                ? 'Clearing...'
-                : clearPartners ? 'Clear Everything' : 'Clear Data Only'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
