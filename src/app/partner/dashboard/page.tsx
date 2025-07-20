@@ -35,15 +35,19 @@ import {
   TableRow,
 } from '@/shared/components/ui/table';
 import {
-  Download,
-  Truck,
-  Fuel,
+  Building2,
   Calendar,
-  TrendingUp,
-  MapPin,
-  Clock,
-  LogOut,
+  CheckCircle,
+  Download,
   FileX,
+  Fuel,
+  LogOut,
+  MapPin,
+  Package,
+  Scale,
+  Truck,
+  TrendingUp,
+  User,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/config/trpc/client';
@@ -110,6 +114,23 @@ const PartnerDashboard = () => {
 
   const handleLogout = async () => {
     logoutMutation.mutate();
+  };
+
+  // Function to get the correct end date for the second half of the month
+  const getSecondHalfEndDate = (month: number, year: number) => {
+    const lastDay = new Date(year, month, 0).getDate();
+    return lastDay;
+  };
+
+  // Function to get the date range label
+  const getDateRangeLabel = (dateRange: string) => {
+    if (dateRange === '1-15') {
+      return '1st to 15th';
+    } else if (dateRange === '16-31') {
+      const endDate = getSecondHalfEndDate(selectedMonth, selectedYear);
+      return `16th to ${endDate}${endDate === 31 ? 'st' : endDate === 30 ? 'th' : endDate === 29 ? 'th' : 'th'}`;
+    }
+    return 'All Month';
   };
 
   const handleDownloadExcel = async () => {
@@ -203,8 +224,12 @@ const PartnerDashboard = () => {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-gradient-to-r from-blue-600 to-purple-600">
-                  <Truck className="h-6 w-6 text-white" />
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-gray-200">
+                  <img
+                    src="/AT.png"
+                    alt="Archana Transport Logo"
+                    className="h-8 w-8 object-contain"
+                  />
                 </div>
                 <div>
                   <h1 className="text-foreground text-lg font-semibold">
@@ -311,7 +336,7 @@ const PartnerDashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1-15">1st to 15th</SelectItem>
-                <SelectItem value="16-31">16th to 30/31</SelectItem>
+                <SelectItem value="16-31">16th to {getSecondHalfEndDate(selectedMonth, selectedYear)}{getSecondHalfEndDate(selectedMonth, selectedYear) === 31 ? 'st' : getSecondHalfEndDate(selectedMonth, selectedYear) === 30 ? 'th' : getSecondHalfEndDate(selectedMonth, selectedYear) === 29 ? 'th' : 'th'}</SelectItem>
                 <SelectItem value="all">Full Month</SelectItem>
               </SelectContent>
             </Select>
@@ -346,7 +371,7 @@ const PartnerDashboard = () => {
                 <Skeleton className="h-8 w-20" />
               ) : (
                 <div className="text-primary text-2xl font-bold">
-                  {summaryData?.dispatch.totalQuantity || '0.00'} Tons
+                  {summaryData?.dispatch.totalQuantity || '0.00'} M.T
                 </div>
               )}
               <Badge variant="secondary" className="mt-2">
@@ -354,7 +379,7 @@ const PartnerDashboard = () => {
                   'en-US',
                   { month: 'long', year: 'numeric' }
                 )}
-                {dateFilter !== 'all' && ` (${dateFilter})`}
+                {dateFilter !== 'all' && ` (${getDateRangeLabel(dateFilter)})`}
               </Badge>
             </CardContent>
           </Card>
@@ -379,7 +404,7 @@ const PartnerDashboard = () => {
                   'en-US',
                   { month: 'long', year: 'numeric' }
                 )}
-                {dateFilter !== 'all' && ` (${dateFilter})`}
+                {dateFilter !== 'all' && ` (${getDateRangeLabel(dateFilter)})`}
               </Badge>
             </CardContent>
           </Card>
@@ -391,12 +416,19 @@ const PartnerDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border-0 shadow-lg">
-            <CardHeader>
-              <CardTitle>Transportation Data</CardTitle>
-              <CardDescription>
-                View your dispatch and diesel consumption records
-              </CardDescription>
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
+            <CardHeader className="bg-gradient-to-r from-red-600 to-red-800 text-white rounded-t-lg">
+              <div className="flex items-center space-x-3">
+                <div className="p-2 bg-white/20 rounded-lg">
+                  <Truck className="h-6 w-6" />
+                </div>
+                <div>
+                  <CardTitle className="text-white text-xl">Transportation Data</CardTitle>
+                  <CardDescription className="text-red-100">
+                    View your dispatch and diesel consumption records
+                  </CardDescription>
+                </div>
+              </div>
             </CardHeader>
             <CardContent>
               <Tabs
@@ -409,20 +441,20 @@ const PartnerDashboard = () => {
                 }}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2">
+                <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-xl">
                   <TabsTrigger
                     value="dispatch"
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-red-600 rounded-lg transition-all duration-200"
                   >
                     <Truck className="h-4 w-4" />
-                    <span>Dispatch Data</span>
+                    <span className="font-medium">Dispatch Data</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="diesel"
-                    className="flex items-center space-x-2"
+                    className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-red-600 rounded-lg transition-all duration-200"
                   >
                     <Fuel className="h-4 w-4" />
-                    <span>Diesel Data</span>
+                    <span className="font-medium">Diesel Data</span>
                   </TabsTrigger>
                 </TabsList>
 
@@ -434,48 +466,82 @@ const PartnerDashboard = () => {
                       ))}
                     </div>
                   ) : !dispatchData?.data.length ? (
-                    <div className="py-12 text-center">
-                      <FileX className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                      <h3 className="text-muted-foreground mb-2 text-lg font-medium">
-                        No Records Found
+                    <div className="py-16 text-center">
+                      <div className="mx-auto mb-6 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+                        <FileX className="text-red-600 h-12 w-12" />
+                      </div>
+                      <h3 className="text-gray-900 mb-3 text-xl font-semibold">
+                        No Dispatch Records Found
                       </h3>
-                      <p className="text-muted-foreground text-sm">
-                        No dispatch data available for the selected period.
+                      <p className="text-gray-600 text-base max-w-md mx-auto">
+                        No dispatch data available for the selected period. Try changing the date range or month.
                       </p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Vehicle No</TableHead>
-                            <TableHead>Material</TableHead>
-                            <TableHead>Quantity</TableHead>
-                            <TableHead>Destination</TableHead>
+                          <TableRow className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-200">
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>Date</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Truck className="h-4 w-4" />
+                                <span>Vehicle No</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Package className="h-4 w-4" />
+                                <span>Material</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Scale className="h-4 w-4" />
+                                <span>Unload Quantity</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <MapPin className="h-4 w-4" />
+                                <span>Unload Point</span>
+                              </div>
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {dispatchData.data.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">
-                                {new Date(item.date).toLocaleDateString()}
+                            <TableRow key={index} className="hover:bg-red-50 transition-colors duration-200 border-b border-gray-100">
+                              <TableCell className="font-medium py-4">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  <span className="text-gray-900">{new Date(item.date).toLocaleDateString()}</span>
+                                </div>
                               </TableCell>
-                              <TableCell>{item.vehicleNumber}</TableCell>
-                              <TableCell>
-                                <Badge variant="secondary">
+                              <TableCell className="font-mono text-sm py-4">
+                                <div className="bg-gray-100 px-3 py-1 rounded-lg inline-block">
+                                  {item.vehicleNumber.replace(/-/g, '')}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
                                   {item.material}
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="font-mono">
-                                  {item.quantity} T
+                              <TableCell className="py-4">
+                                <Badge variant="outline" className="font-mono bg-black text-white border-black hover:bg-gray-800">
+                                  {parseFloat(item.quantity).toFixed(2)} M.T
                                 </Badge>
                               </TableCell>
-                              <TableCell>
-                                <div className="flex items-center space-x-1">
-                                  <MapPin className="text-muted-foreground h-3 w-3" />
-                                  <span>{item.destination}</span>
+                              <TableCell className="py-4">
+                                <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
+                                  <MapPin className="text-red-500 h-4 w-4" />
+                                  <span className="text-sm text-gray-700 font-medium">{item.destination}</span>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -494,49 +560,105 @@ const PartnerDashboard = () => {
                       ))}
                     </div>
                   ) : !dieselData?.data.length ? (
-                    <div className="py-12 text-center">
-                      <FileX className="text-muted-foreground mx-auto mb-4 h-12 w-12" />
-                      <h3 className="text-muted-foreground mb-2 text-lg font-medium">
-                        No Records Found
+                    <div className="py-16 text-center">
+                      <div className="mx-auto mb-6 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
+                        <FileX className="text-red-600 h-12 w-12" />
+                      </div>
+                      <h3 className="text-gray-900 mb-3 text-xl font-semibold">
+                        No Diesel Records Found
                       </h3>
-                      <p className="text-muted-foreground text-sm">
-                        No diesel data available for the selected period.
+                      <p className="text-gray-600 text-base max-w-md mx-auto">
+                        No diesel data available for the selected period. Try changing the date range or month.
                       </p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow>
-                            <TableHead>Date</TableHead>
-                            <TableHead>Vehicle No</TableHead>
-                            <TableHead>Volume</TableHead>
-                            <TableHead>Item</TableHead>
-                            <TableHead>Fuel Station</TableHead>
-                            <TableHead>Status</TableHead>
+                          <TableRow className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-200">
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Calendar className="h-4 w-4" />
+                                <span>Date</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Truck className="h-4 w-4" />
+                                <span>Vehicle No</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Fuel className="h-4 w-4" />
+                                <span>Volume</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Package className="h-4 w-4" />
+                                <span>Item</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <Building2 className="h-4 w-4" />
+                                <span>Fuel Station</span>
+                              </div>
+                            </TableHead>
+                            <TableHead className="font-semibold text-red-900 py-4">
+                              <div className="flex items-center space-x-2">
+                                <CheckCircle className="h-4 w-4" />
+                                <span>Status</span>
+                              </div>
+                            </TableHead>
                           </TableRow>
                         </TableHeader>
                         <TableBody>
                           {dieselData.data.map((item, index) => (
-                            <TableRow key={index}>
-                              <TableCell className="font-medium">
-                                {new Date(item.date).toLocaleDateString()}
+                            <TableRow key={index} className="hover:bg-red-50 transition-colors duration-200 border-b border-gray-100">
+                              <TableCell className="font-medium py-4">
+                                <div className="flex items-center space-x-2">
+                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
+                                  <span className="text-gray-900">{new Date(item.date).toLocaleDateString()}</span>
+                                </div>
                               </TableCell>
-                              <TableCell>{item.vehicleNumber}</TableCell>
-                              <TableCell>
-                                <Badge variant="outline" className="font-mono">
-                                  {item.volume} L
+                              <TableCell className="font-mono text-sm py-4">
+                                <div className="bg-gray-100 px-3 py-1 rounded-lg inline-block">
+                                  {item.vehicleNumber.replace(/-/g, '')}
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <Badge variant="outline" className="font-mono bg-black text-white border-black hover:bg-gray-800">
+                                  {parseFloat(item.volume).toFixed(0)} L
                                 </Badge>
                               </TableCell>
-                              <TableCell>{item.item}</TableCell>
-                              <TableCell>{item.fuelStation}</TableCell>
-                              <TableCell>
+                              <TableCell className="py-4">
+                                <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
+                                  {item.item}
+                                </Badge>
+                              </TableCell>
+                              <TableCell className="py-4">
+                                <div className="bg-gray-50 px-3 py-2 rounded-lg">
+                                  <span className="text-sm text-gray-700 font-medium">{item.fuelStation}</span>
+                                </div>
+                              </TableCell>
+                              <TableCell className="py-4">
                                 <Badge
                                   variant={
-                                    item.status === 'Completed'
+                                    item.status === 'completed'
                                       ? 'default'
+                                      : item.status === 'pending'
+                                      ? 'outline'
                                       : 'secondary'
                                   }
+                                  className={`capitalize ${
+                                    item.status === 'completed'
+                                      ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+                                      : item.status === 'pending'
+                                      ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
+                                      : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
+                                  }`}
                                 >
                                   {item.status}
                                 </Badge>
