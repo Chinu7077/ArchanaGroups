@@ -361,6 +361,13 @@ const AdminDashboard = () => {
     fileType: 'dispatch' | 'diesel'
   ) => {
     const file = event.target.files?.[0];
+    console.log(`📁 File selected for ${fileType}:`, file ? {
+      name: file.name,
+      size: file.size,
+      type: file.type,
+      lastModified: file.lastModified
+    } : 'No file');
+    
     if (file) {
       // Clear any previous errors when new files are selected
       setFileUploadError(null);
@@ -369,22 +376,33 @@ const AdminDashboard = () => {
       const isValidFormat = file.name.match(/\.(xlsx|xls)$/i);
       const isValidSize = file.size <= 10 * 1024 * 1024; // 10MB
       
+      console.log(`🔍 File validation for ${file.name}:`);
+      console.log(`  - Format check: ${isValidFormat ? '✅' : '❌'} (extension: ${file.name.split('.').pop()})`);
+      console.log(`  - Size check: ${isValidSize ? '✅' : '❌'} (${(file.size / 1024 / 1024).toFixed(2)}MB)`);
+      console.log(`  - MIME type: ${file.type}`);
+      
       if (!isValidFormat) {
-        setFileUploadError(`Invalid file format: ${file.name}. Please select an Excel file (.xlsx or .xls)`);
+        const errorMsg = `Invalid file format: ${file.name}. Please select an Excel file (.xlsx or .xls). Current extension: ${file.name.split('.').pop()}`;
+        console.error(`❌ ${errorMsg}`);
+        setFileUploadError(errorMsg);
         return;
       }
       
       if (!isValidSize) {
-        setFileUploadError(`File too large: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB`);
+        const errorMsg = `File too large: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB). Maximum size is 10MB`;
+        console.error(`❌ ${errorMsg}`);
+        setFileUploadError(errorMsg);
         return;
       }
       
-      console.log(`✅ File validated: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${file.type})`);
+      console.log(`✅ File validated successfully: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)}MB, type: ${file.type})`);
       
       if (fileType === 'dispatch') {
         setDispatchFile(file);
+        console.log(`📦 Dispatch file set: ${file.name}`);
       } else {
         setDieselFile(file);
+        console.log(`⛽ Diesel file set: ${file.name}`);
       }
     }
   };
@@ -484,7 +502,10 @@ const AdminDashboard = () => {
   });
 
   const handleUploadFiles = async () => {
+    console.log('🚀 Starting file upload process...');
+    
     if (!dispatchFile && !dieselFile) {
+      console.error('❌ No files selected for upload');
       toast.error('Please select at least one file to upload');
       return;
     }
@@ -499,24 +520,29 @@ const AdminDashboard = () => {
         name: dieselFile.name,
         size: dieselFile.size,
         type: dieselFile.type
-      } : null
+      } : null,
+      forceUpload
     });
 
     try {
       const formData = new FormData();
       if (dispatchFile) {
         formData.append('dispatchFile', dispatchFile);
+        console.log(`📦 Added dispatch file to FormData: ${dispatchFile.name}`);
       }
       if (dieselFile) {
         formData.append('dieselFile', dieselFile);
+        console.log(`⛽ Added diesel file to FormData: ${dieselFile.name}`);
       }
       if (forceUpload) {
         formData.append('forceUpload', 'true');
+        console.log('🔄 Force upload enabled');
       }
 
+      console.log('📤 Sending FormData to server...');
       await processFilesMutation.mutateAsync(formData);
     } catch (error) {
-      console.error('Upload failed:', error);
+      console.error('❌ Upload failed:', error);
     }
   };
 
