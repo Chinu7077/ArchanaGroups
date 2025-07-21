@@ -75,6 +75,7 @@ import {
   Copy,
   X,
   Pencil,
+  MessageCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/config/trpc/client';
@@ -90,6 +91,7 @@ import {
 import { addMonths, format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
 import { Label } from '@/shared/components/ui/label';
 import { cn } from '@/shared/lib/utils';
+import { Textarea } from '@/shared/components/ui/textarea';
 
 // Define Zod schemas
 const addPartnerSchema = z.object({
@@ -150,6 +152,7 @@ const AdminDashboard = () => {
   );
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
   const router = useRouter();
+  const [clearAllDataDialogOpen, setClearAllDataDialogOpen] = useState(false);
 
   // Data management state
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -169,66 +172,80 @@ const AdminDashboard = () => {
     
     let filtered = [...records];
 
-    // Date filtering
-    if (dateFilter !== 'all') {
-      let start: Date, end: Date;
-      
-      switch (dateFilter) {
-        case 'thisMonth':
-          start = startOfMonth(new Date());
-          end = endOfMonth(new Date());
-          break;
-        case 'lastMonth':
-          start = startOfMonth(addMonths(new Date(), -1));
-          end = endOfMonth(addMonths(new Date(), -1));
-          break;
-        case 'custom':
-          if (!startDate || !endDate) break;
-          start = new Date(startDate);
-          end = new Date(endDate);
-          // Set end date to end of day
-          end.setHours(23, 59, 59, 999);
-          break;
-        default:
-          break;
+    try {
+      // Date filtering
+      if (dateFilter !== 'all') {  // Only apply date filtering if not "all"
+        let start: Date | null = null;
+        let end: Date | null = null;
+        
+        switch (dateFilter) {
+          case 'thisMonth':
+            start = startOfMonth(new Date());
+            end = endOfMonth(new Date());
+            break;
+          case 'lastMonth':
+            start = startOfMonth(addMonths(new Date(), -1));
+            end = endOfMonth(addMonths(new Date(), -1));
+            break;
+          case 'custom':
+            if (startDate && endDate) {
+              start = new Date(startDate);
+              end = new Date(endDate);
+              end.setHours(23, 59, 59, 999);
+            }
+            break;
+        }
+
+        if (start && end) {
+          filtered = filtered.filter(record => {
+            try {
+              const recordDate = new Date(record.date);
+              return recordDate >= start! && recordDate <= end!;
+            } catch (e) {
+              console.error('Invalid date in record:', record);
+              return false;
+            }
+          });
+        }
       }
 
-      if (start && end) {
+      // Search term filtering
+      if (searchTerm?.trim()) {
+        const searchLower = searchTerm.toLowerCase().trim();
         filtered = filtered.filter(record => {
-          const recordDate = new Date(record.date);
-          return recordDate >= start && recordDate <= end;
+          try {
+            if (type === 'dispatch') {
+              return (
+                String(record.vehicleNumber || '').toLowerCase().includes(searchLower) ||
+                String(record.material || '').toLowerCase().includes(searchLower) ||
+                String(record.destination || '').toLowerCase().includes(searchLower) ||
+                String(record.ownerName || '').toLowerCase().includes(searchLower) ||
+                String(record.quantity || '').includes(searchLower) ||
+                new Date(record.date).toLocaleDateString().includes(searchLower)
+              );
+            } else {
+              return (
+                String(record.vehicleNumber || '').toLowerCase().includes(searchLower) ||
+                String(record.item || '').toLowerCase().includes(searchLower) ||
+                String(record.fuelStation || '').toLowerCase().includes(searchLower) ||
+                String(record.status || '').toLowerCase().includes(searchLower) ||
+                String(record.ownerName || '').toLowerCase().includes(searchLower) ||
+                String(record.volume || '').includes(searchLower) ||
+                new Date(record.date).toLocaleDateString().includes(searchLower)
+              );
+            }
+          } catch (e) {
+            console.error('Error filtering record:', record);
+            return false;
+          }
         });
       }
-    }
 
-    // Search term filtering
-    if (searchTerm.trim()) {
-      const searchLower = searchTerm.toLowerCase().trim();
-      filtered = filtered.filter(record => {
-        if (type === 'dispatch') {
-          return (
-            record.vehicleNumber.toLowerCase().includes(searchLower) ||
-            record.material.toLowerCase().includes(searchLower) ||
-            record.destination.toLowerCase().includes(searchLower) ||
-            record.ownerName.toLowerCase().includes(searchLower) ||
-            new Date(record.date).toLocaleDateString().includes(searchLower) ||
-            record.quantity.toString().includes(searchLower)
-          );
-        } else {
-          return (
-            record.vehicleNumber.toLowerCase().includes(searchLower) ||
-            record.item.toLowerCase().includes(searchLower) ||
-            record.fuelStation.toLowerCase().includes(searchLower) ||
-            record.status.toLowerCase().includes(searchLower) ||
-            record.ownerName.toLowerCase().includes(searchLower) ||
-            new Date(record.date).toLocaleDateString().includes(searchLower) ||
-            record.volume.toString().includes(searchLower)
-          );
-        }
-      });
+      return filtered;
+    } catch (e) {
+      console.error('Error in filterRecords:', e);
+      return records; // Return original records if filtering fails
     }
-
-    return filtered;
   };
 
   // Get data
@@ -285,6 +302,22 @@ const AdminDashboard = () => {
       toast.success('Diesel record deleted successfully');
       refetchDiesel();
       setRecordDeleteDialogOpen(false);
+    },
+  });
+
+  // Clear all data mutation
+  const clearAllDataMutation = trpc.admin.clearAllData.useMutation({
+    onSuccess: () => {
+      toast.success('All data has been cleared successfully');
+      // Refresh all data
+      refetchStats();
+      refetchPartners();
+      refetchDispatch();
+      refetchDiesel();
+      setClearAllDataDialogOpen(false);
+    },
+    onError: (error) => {
+      toast.error(`Failed to clear data: ${error.message}`);
     },
   });
 
@@ -698,6 +731,22 @@ const AdminDashboard = () => {
   const filteredDispatchData = filterRecords(dispatchData || [], 'dispatch');
   const filteredDieselData = filterRecords(dieselData || [], 'diesel');
 
+  const [showResponseDialog, setShowResponseDialog] = useState(false);
+  const [selectedQuery, setSelectedQuery] = useState<any>(null);
+
+  const { data: supportQueries, refetch: refetchQueries } = trpc.admin.getSupportQueries.useQuery();
+
+  const updateQueryMutation = trpc.admin.updateSupportQuery.useMutation({
+    onSuccess: () => {
+      toast.success('Query updated successfully');
+      setShowResponseDialog(false);
+      refetchQueries();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update query: ${error.message}`);
+    },
+  });
+
   return (
     <div className="bg-background min-h-screen">
       {/* Header */}
@@ -759,11 +808,12 @@ const AdminDashboard = () => {
           }}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-4">
+          <TabsList className="grid w-full grid-cols-5">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="partners">Partners</TabsTrigger>
             <TabsTrigger value="uploads">Data Upload</TabsTrigger>
             <TabsTrigger value="data">Data Management</TabsTrigger>
+            <TabsTrigger value="support">Support</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -1129,6 +1179,13 @@ const AdminDashboard = () => {
                   View, edit, and manage dispatch and diesel records
                 </p>
               </div>
+              <Button
+                variant="destructive"
+                onClick={() => setClearAllDataDialogOpen(true)}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Clear All Data
+              </Button>
             </div>
 
             {/* Search and Filter Section */}
@@ -1330,6 +1387,84 @@ const AdminDashboard = () => {
             </Card>
               </TabsContent>
             </Tabs>
+          </TabsContent>
+
+          {/* Support Tab */}
+          <TabsContent value="support" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Support Queries</h3>
+                <p className="text-muted-foreground">
+                  Manage and respond to partner support queries
+                </p>
+              </div>
+            </div>
+
+            <Card>
+              <CardContent className="p-0">
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Partner</TableHead>
+                      <TableHead>Subject</TableHead>
+                      <TableHead>Priority</TableHead>
+                      <TableHead>Status</TableHead>
+                      <TableHead>Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {supportQueries?.map((query) => (
+                      <TableRow key={query.id}>
+                        <TableCell>
+                          {new Date(query.createdAt).toLocaleDateString()}
+                        </TableCell>
+                        <TableCell>{query.partner.name}</TableCell>
+                        <TableCell>{query.subject}</TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              query.priority === 'high'
+                                ? 'destructive'
+                                : query.priority === 'normal'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                          >
+                            {query.priority}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge
+                            variant={
+                              query.status === 'resolved'
+                                ? 'default'
+                                : query.status === 'in_progress'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                          >
+                            {query.status.replace('_', ' ')}
+                          </Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => {
+                              setSelectedQuery(query);
+                              setShowResponseDialog(true);
+                            }}
+                          >
+                            <MessageCircle className="h-4 w-4" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
+              </CardContent>
+            </Card>
           </TabsContent>
         </Tabs>
       </div>
@@ -1593,6 +1728,113 @@ const AdminDashboard = () => {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Clear All Data Confirmation Dialog */}
+      <AlertDialog open={clearAllDataDialogOpen} onOpenChange={setClearAllDataDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Clear All Data</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to clear all data? This will:
+              <ul className="list-disc pl-6 mt-2 space-y-1">
+                <li>Delete all partners and their credentials</li>
+                <li>Delete all dispatch records</li>
+                <li>Delete all diesel records</li>
+              </ul>
+              <div className="mt-4 p-4 bg-red-50 text-red-800 rounded-md">
+                ⚠️ This action cannot be undone. All data will be permanently deleted.
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setClearAllDataDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => clearAllDataMutation.mutate()}
+              disabled={clearAllDataMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {clearAllDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Response Dialog */}
+      <Dialog open={showResponseDialog} onOpenChange={setShowResponseDialog}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Respond to Query</DialogTitle>
+            <DialogDescription>
+              Update the status and provide a response to the partner's query.
+            </DialogDescription>
+          </DialogHeader>
+          {selectedQuery && (
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-medium">Query Details</h4>
+                <p className="text-sm text-gray-500 mt-1">{selectedQuery.message}</p>
+              </div>
+              <div className="space-y-2">
+                <Label>Status</Label>
+                <Select
+                  value={selectedQuery.status}
+                  onValueChange={(value) =>
+                    setSelectedQuery({
+                      ...selectedQuery,
+                      status: value as 'pending' | 'in_progress' | 'resolved',
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pending">Pending</SelectItem>
+                    <SelectItem value="in_progress">In Progress</SelectItem>
+                    <SelectItem value="resolved">Resolved</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label>Response</Label>
+                <Textarea
+                  value={selectedQuery.response || ''}
+                  onChange={(e) =>
+                    setSelectedQuery({
+                      ...selectedQuery,
+                      response: e.target.value,
+                    })
+                  }
+                  placeholder="Type your response here..."
+                  className="min-h-[100px]"
+                />
+              </div>
+              <DialogFooter>
+                <Button
+                  variant="outline"
+                  onClick={() => setShowResponseDialog(false)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  onClick={() => {
+                    updateQueryMutation.mutate({
+                      queryId: selectedQuery.id,
+                      status: selectedQuery.status,
+                      response: selectedQuery.response || undefined,
+                    });
+                  }}
+                  disabled={updateQueryMutation.isPending}
+                >
+                  {updateQueryMutation.isPending ? 'Saving...' : 'Save Response'}
+                </Button>
+              </DialogFooter>
+            </div>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

@@ -1,8 +1,8 @@
 import { z } from 'zod';
 import { router, adminProcedure } from '../init';
 import { db } from '@/config/db';
-import { partners, dispatchData, dieselData } from '@/config/db/schema';
-import { and, eq, count } from 'drizzle-orm';
+import { partners, dispatchData, dieselData, supportQueries } from '@/config/db/schema';
+import { and, eq, count, desc } from 'drizzle-orm';
 import bcrypt from 'bcryptjs';
 import { nanoid } from 'nanoid';
 import { TRPCError } from '@trpc/server';
@@ -418,5 +418,68 @@ export const adminRouter = router({
       return await db.query.dieselData.findMany({
         orderBy: (dieselData, { desc }) => [desc(dieselData.date)],
       });
+  }),
+
+  // Get all support queries
+  getSupportQueries: adminProcedure.query(async () => {
+    const queries = await db.query.supportQueries.findMany({
+      orderBy: [desc(supportQueries.createdAt)],
+      with: {
+        partner: true,
+      },
+    });
+
+    return queries;
+  }),
+
+  // Update support query status
+  updateSupportQuery: adminProcedure
+    .input(
+      z.object({
+        queryId: z.string(),
+        status: z.enum(['pending', 'in_progress', 'resolved']),
+        response: z.string().optional(),
+      })
+    )
+    .mutation(async ({ input }) => {
+      const { queryId, status, response } = input;
+
+      const [updatedQuery] = await db
+        .update(supportQueries)
+        .set({
+          status,
+          response,
+          ...(status === 'resolved' ? { resolvedAt: new Date() } : {}),
+          updatedAt: new Date(),
+        })
+        .where(eq(supportQueries.id, queryId))
+        .returning();
+
+      return updatedQuery;
+    }),
+
+  // Clear all data
+  clearAllData: adminProcedure.mutation(async () => {
+    try {
+      // Delete all diesel records
+      await db.delete(dieselData);
+      
+      // Delete all dispatch records
+      await db.delete(dispatchData);
+      
+      // Delete all partners
+      await db.delete(partners);
+
+      return {
+        success: true,
+        message: 'All data has been cleared successfully',
+      };
+    } catch (error) {
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Failed to clear data',
+        cause: error,
+      });
+    }
   }),
 });

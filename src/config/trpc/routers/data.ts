@@ -1,7 +1,17 @@
 import { z } from 'zod';
-import { router, partnerProcedure } from '../init';
+import { router, partnerProcedure, protectedProcedure } from '../init';
 import { db, dispatchData, dieselData, dataFilterSchema } from '@/config/db';
+import { supportQueries } from '@/config/db/schema';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
+import { TRPCError } from '@trpc/server';
+import { desc } from 'drizzle-orm';
+
+// Support query schema
+const supportQuerySchema = z.object({
+  subject: z.string().min(1, 'Subject is required').max(200, 'Subject is too long'),
+  message: z.string().min(1, 'Message is required').max(2000, 'Message is too long'),
+  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+});
 
 export const dataRouter = router({
   // Get dispatch data for partner with filtering
@@ -161,4 +171,45 @@ export const dataRouter = router({
         },
       };
     }),
+
+  // Submit a support query
+  submitSupportQuery: protectedProcedure
+    .input(supportQuerySchema)
+    .mutation(async ({ input, ctx }) => {
+      if (!ctx.user?.id) {
+        throw new TRPCError({
+          code: 'UNAUTHORIZED',
+          message: 'You must be logged in to submit a support query',
+        });
+      }
+
+      const [query] = await db
+        .insert(supportQueries)
+        .values({
+          partnerId: ctx.user.id,
+          subject: input.subject,
+          message: input.message,
+          priority: input.priority,
+        })
+        .returning();
+
+      return query;
+    }),
+
+  // Get partner's support queries
+  getSupportQueries: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.user?.id) {
+      throw new TRPCError({
+        code: 'UNAUTHORIZED',
+        message: 'You must be logged in to view support queries',
+      });
+    }
+
+    const queries = await db.query.supportQueries.findMany({
+      where: eq(supportQueries.partnerId, ctx.user.id),
+      orderBy: [desc(supportQueries.createdAt)],
+    });
+
+    return queries;
+  }),
 });

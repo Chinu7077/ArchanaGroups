@@ -183,6 +183,19 @@ export const dieselData = pgTable(
   ]
 );
 
+export const supportQueries = pgTable('support_queries', {
+  id: uuid('id').defaultRandom().primaryKey(),
+  partnerId: uuid('partner_id').references(() => partners.id, { onDelete: 'cascade' }),
+  subject: text('subject').notNull(),
+  message: text('message').notNull(),
+  status: text('status').notNull().default('pending'),  // pending, in_progress, resolved
+  priority: text('priority').notNull().default('normal'),  // low, normal, high
+  createdAt: timestamp('created_at').defaultNow(),
+  updatedAt: timestamp('updated_at').defaultNow(),
+  resolvedAt: timestamp('resolved_at'),
+  response: text('response'),
+});
+
 // Relations
 export const partnersRelations = relations(partners, ({ many }) => ({
   dispatchData: many(dispatchData),

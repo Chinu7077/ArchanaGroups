@@ -48,10 +48,41 @@ import {
   Truck,
   TrendingUp,
   User,
+  HelpCircle,
+  MessageCircle,
 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/config/trpc/client';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/shared/components/ui/dialog';
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from '@/shared/components/ui/form';
+import { Input } from '@/shared/components/ui/input';
+import { Textarea } from '@/shared/components/ui/textarea';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+
+const supportQuerySchema = z.object({
+  subject: z.string().min(1, 'Subject is required').max(200, 'Subject is too long'),
+  message: z.string().min(1, 'Message is required').max(2000, 'Message is too long'),
+  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+});
+
+type SupportQueryFormData = z.infer<typeof supportQuerySchema>;
 
 const PartnerDashboard = () => {
   const searchParams = useSearchParams();
@@ -60,6 +91,7 @@ const PartnerDashboard = () => {
   const [dateFilter, setDateFilter] = useState<'1-15' | '16-31' | 'all'>('all');
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dispatch');
   const router = useRouter();
+  const [showSupportDialog, setShowSupportDialog] = useState(false);
 
   // Get current user
   const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery();
@@ -87,6 +119,9 @@ const PartnerDashboard = () => {
       year: selectedYear,
       dateRange: dateFilter,
     });
+
+  // Get support queries
+  const { data: supportQueries, refetch: refetchQueries } = trpc.data.getSupportQueries.useQuery();
 
   // Logout mutation
   const utils = trpc.useUtils();
@@ -194,6 +229,33 @@ const PartnerDashboard = () => {
       
       toast.success('Diesel data Excel file has been downloaded');
     }
+  };
+
+  // Add form
+  const supportForm = useForm<SupportQueryFormData>({
+    resolver: zodResolver(supportQuerySchema),
+    defaultValues: {
+      subject: '',
+      message: '',
+      priority: 'normal',
+    },
+  });
+
+  // Add mutation
+  const submitQueryMutation = trpc.data.submitSupportQuery.useMutation({
+    onSuccess: () => {
+      toast.success('Your query has been submitted successfully');
+      supportForm.reset();
+      setShowSupportDialog(false);
+      refetchQueries();
+    },
+    onError: (error) => {
+      toast.error(`Failed to submit query: ${error.message}`);
+    },
+  });
+
+  const onSubmitQuery = (data: SupportQueryFormData) => {
+    submitQueryMutation.mutate(data);
   };
 
   // Redirect if not authenticated
@@ -663,6 +725,157 @@ const PartnerDashboard = () => {
             </CardContent>
           </Card>
         </motion.div>
+
+        {/* Help & Support Button */}
+        <div className="fixed bottom-8 right-8">
+          <Dialog open={showSupportDialog} onOpenChange={setShowSupportDialog}>
+            <DialogTrigger asChild>
+              <Button
+                className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+                size="lg"
+              >
+                <HelpCircle className="mr-2 h-5 w-5" />
+                Help & Support
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-[500px]">
+              <DialogHeader>
+                <DialogTitle>Submit a Query</DialogTitle>
+                <DialogDescription>
+                  Need help or have a question? Submit your query here and we'll get back to you as soon as possible.
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...supportForm}>
+                <form onSubmit={supportForm.handleSubmit(onSubmitQuery)} className="space-y-4">
+                  <FormField
+                    control={supportForm.control}
+                    name="subject"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Subject</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Brief description of your query" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={supportForm.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Message</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            placeholder="Describe your query or issue in detail"
+                            className="min-h-[100px]"
+                            {...field}
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={supportForm.control}
+                    name="priority"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Priority</FormLabel>
+                        <Select
+                          onValueChange={field.onChange}
+                          defaultValue={field.value}
+                        >
+                          <FormControl>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select priority" />
+                            </SelectTrigger>
+                          </FormControl>
+                          <SelectContent>
+                            <SelectItem value="low">Low</SelectItem>
+                            <SelectItem value="normal">Normal</SelectItem>
+                            <SelectItem value="high">High</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="flex justify-end space-x-2 pt-4">
+                    <Button
+                      type="button"
+                      variant="outline"
+                      onClick={() => setShowSupportDialog(false)}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      type="submit"
+                      disabled={submitQueryMutation.isPending}
+                    >
+                      {submitQueryMutation.isPending ? 'Submitting...' : 'Submit Query'}
+                    </Button>
+                  </div>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+
+        {/* Previous Queries Section */}
+        {supportQueries?.length > 0 && (
+          <div className="mt-8">
+            <Card>
+              <CardHeader>
+                <CardTitle className="text-lg font-semibold">
+                  <div className="flex items-center">
+                    <MessageCircle className="mr-2 h-5 w-5" />
+                    Your Previous Queries
+                  </div>
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {supportQueries.map((query) => (
+                    <Card key={query.id} className="bg-gray-50">
+                      <CardHeader>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <CardTitle className="text-base">{query.subject}</CardTitle>
+                            <p className="text-sm text-gray-500">
+                              {new Date(query.createdAt).toLocaleDateString()}
+                            </p>
+                          </div>
+                          <Badge
+                            variant={
+                              query.status === 'resolved'
+                                ? 'default'
+                                : query.status === 'in_progress'
+                                ? 'secondary'
+                                : 'outline'
+                            }
+                          >
+                            {query.status.replace('_', ' ')}
+                          </Badge>
+                        </div>
+                      </CardHeader>
+                      <CardContent>
+                        <p className="text-sm whitespace-pre-wrap">{query.message}</p>
+                        {query.response && (
+                          <div className="mt-4 p-4 bg-white rounded-md">
+                            <p className="text-sm font-semibold text-gray-700">Response:</p>
+                            <p className="text-sm mt-2">{query.response}</p>
+                          </div>
+                        )}
+                      </CardContent>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        )}
       </div>
     </div>
   );
