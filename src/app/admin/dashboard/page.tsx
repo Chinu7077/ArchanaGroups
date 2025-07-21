@@ -104,22 +104,22 @@ type AddPartnerFormData = z.infer<typeof addPartnerSchema>;
 
 // Add validation schemas
 const dispatchRecordSchema = z.object({
-  date: z.string(),
-  vehicleNumber: z.string(),
-  material: z.string(),
-  quantity: z.string(),
-  destination: z.string(),
-  ownerName: z.string(),
+  date: z.string().min(1, 'Date is required'),
+  vehicleNumber: z.string().min(1, 'Vehicle number is required'),
+  material: z.string().min(1, 'Material is required'),
+  quantity: z.string().min(1, 'Quantity is required'),
+  destination: z.string().min(1, 'Destination is required'),
+  ownerName: z.string().min(1, 'Owner name is required'),
 });
 
 const dieselRecordSchema = z.object({
-  date: z.string(),
-  vehicleNumber: z.string(),
-  volume: z.string(),
-  item: z.string(),
-  fuelStation: z.string(),
-  status: z.string(),
-  ownerName: z.string(),
+  date: z.string().min(1, 'Date is required'),
+  vehicleNumber: z.string().min(1, 'Vehicle number is required'),
+  volume: z.string().min(1, 'Volume is required'),
+  item: z.string().min(1, 'Item is required'),
+  fuelStation: z.string().min(1, 'Fuel station is required'),
+  status: z.string().min(1, 'Status is required'),
+  ownerName: z.string().min(1, 'Owner name is required'),
 });
 
 // Define the exact types returned by TRPC
@@ -183,30 +183,36 @@ const AdminDashboard = () => {
           end = endOfMonth(addMonths(new Date(), -1));
           break;
         case 'custom':
-          start = startDate ? parseISO(startDate) : new Date(0);
-          end = endDate ? parseISO(endDate) : new Date();
+          if (!startDate || !endDate) break;
+          start = new Date(startDate);
+          end = new Date(endDate);
+          // Set end date to end of day
+          end.setHours(23, 59, 59, 999);
           break;
         default:
-          start = new Date(0);
-          end = new Date();
+          break;
       }
 
-      filtered = filtered.filter(record => {
-        const recordDate = parseISO(record.date);
-        return recordDate >= start && recordDate <= end;
-      });
+      if (start && end) {
+        filtered = filtered.filter(record => {
+          const recordDate = new Date(record.date);
+          return recordDate >= start && recordDate <= end;
+        });
+      }
     }
 
     // Search term filtering
-    if (searchTerm) {
-      const searchLower = searchTerm.toLowerCase();
+    if (searchTerm.trim()) {
+      const searchLower = searchTerm.toLowerCase().trim();
       filtered = filtered.filter(record => {
         if (type === 'dispatch') {
           return (
             record.vehicleNumber.toLowerCase().includes(searchLower) ||
             record.material.toLowerCase().includes(searchLower) ||
             record.destination.toLowerCase().includes(searchLower) ||
-            record.ownerName.toLowerCase().includes(searchLower)
+            record.ownerName.toLowerCase().includes(searchLower) ||
+            new Date(record.date).toLocaleDateString().includes(searchLower) ||
+            record.quantity.toString().includes(searchLower)
           );
         } else {
           return (
@@ -214,7 +220,9 @@ const AdminDashboard = () => {
             record.item.toLowerCase().includes(searchLower) ||
             record.fuelStation.toLowerCase().includes(searchLower) ||
             record.status.toLowerCase().includes(searchLower) ||
-            record.ownerName.toLowerCase().includes(searchLower)
+            record.ownerName.toLowerCase().includes(searchLower) ||
+            new Date(record.date).toLocaleDateString().includes(searchLower) ||
+            record.volume.toString().includes(searchLower)
           );
         }
       });
@@ -283,20 +291,50 @@ const AdminDashboard = () => {
   // Form
   const recordForm = useForm({
     resolver: zodResolver(recordType === 'dispatch' ? dispatchRecordSchema : dieselRecordSchema),
+    defaultValues: {
+      date: '',
+      vehicleNumber: '',
+      material: '',
+      quantity: '',
+      destination: '',
+      volume: '',
+      item: '',
+      fuelStation: '',
+      status: 'completed',
+      ownerName: '',
+    },
   });
 
   // Handlers
   const handleAddRecord = (type: 'dispatch' | 'diesel') => {
     setRecordType(type);
     setSelectedRecord(null);
-    recordForm.reset();
+    recordForm.reset({
+      date: '',
+      vehicleNumber: '',
+      material: '',
+      quantity: '',
+      destination: '',
+      volume: '',
+      item: '',
+      fuelStation: '',
+      status: 'completed',
+      ownerName: '',
+    });
     setAddDialogOpen(true);
   };
 
   const handleEditRecord = (type: 'dispatch' | 'diesel', record: any) => {
     setRecordType(type);
     setSelectedRecord(record);
-    recordForm.reset(record);
+    
+    // Format date for input
+    const formattedDate = new Date(record.date).toISOString().split('T')[0];
+    
+    recordForm.reset({
+      ...record,
+      date: formattedDate,
+    });
     setAddDialogOpen(true);
   };
 
@@ -307,17 +345,23 @@ const AdminDashboard = () => {
   };
 
   const handleRecordSubmit = (data: any) => {
+    // Add partnerId from selected record if editing
+    const submitData = {
+      ...data,
+      partnerId: selectedRecord?.partnerId || user?.id,
+    };
+
     if (recordType === 'dispatch') {
       if (selectedRecord) {
-        editDispatchMutation.mutate({ ...data, id: selectedRecord.id });
+        editDispatchMutation.mutate({ ...submitData, id: selectedRecord.id });
       } else {
-        addDispatchMutation.mutate(data);
+        addDispatchMutation.mutate(submitData);
       }
     } else {
       if (selectedRecord) {
-        editDieselMutation.mutate({ ...data, id: selectedRecord.id });
+        editDieselMutation.mutate({ ...submitData, id: selectedRecord.id });
       } else {
-        addDieselMutation.mutate(data);
+        addDieselMutation.mutate(submitData);
       }
     }
   };
@@ -1289,6 +1333,175 @@ const AdminDashboard = () => {
           </TabsContent>
         </Tabs>
       </div>
+
+      {/* Add/Edit Record Dialog */}
+      <Dialog open={addDialogOpen} onOpenChange={setAddDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>
+              {selectedRecord ? 'Edit' : 'Add'} {recordType === 'dispatch' ? 'Dispatch' : 'Diesel'} Record
+            </DialogTitle>
+          </DialogHeader>
+          <Form {...recordForm}>
+            <form onSubmit={recordForm.handleSubmit(handleRecordSubmit)} className="space-y-4">
+              <FormField
+                control={recordForm.control}
+                name="date"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Date</FormLabel>
+                    <FormControl>
+                      <Input type="date" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={recordForm.control}
+                name="vehicleNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Vehicle Number</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter vehicle number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              {recordType === 'dispatch' ? (
+                <>
+                  <FormField
+                    control={recordForm.control}
+                    name="material"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Material</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter material" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={recordForm.control}
+                    name="quantity"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Quantity</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="Enter quantity" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={recordForm.control}
+                    name="destination"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Destination</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter destination" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              ) : (
+                <>
+                  <FormField
+                    control={recordForm.control}
+                    name="volume"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Volume</FormLabel>
+                        <FormControl>
+                          <Input type="number" step="0.01" placeholder="Enter volume" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={recordForm.control}
+                    name="item"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Item</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter item" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={recordForm.control}
+                    name="fuelStation"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Fuel Station</FormLabel>
+                        <FormControl>
+                          <Input placeholder="Enter fuel station" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={recordForm.control}
+                    name="status"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Status</FormLabel>
+                        <FormControl>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select status" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="completed">Completed</SelectItem>
+                              <SelectItem value="pending">Pending</SelectItem>
+                              <SelectItem value="cancelled">Cancelled</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </>
+              )}
+              <FormField
+                control={recordForm.control}
+                name="ownerName"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Owner Name</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Enter owner name" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <DialogFooter>
+                <Button type="button" variant="outline" onClick={() => setAddDialogOpen(false)}>
+                  Cancel
+                </Button>
+                <Button type="submit">
+                  {selectedRecord ? 'Update' : 'Add'} Record
+                </Button>
+              </DialogFooter>
+            </form>
+          </Form>
+        </DialogContent>
+      </Dialog>
 
       <AlertDialog
         open={resetPasswordDialogOpen}
