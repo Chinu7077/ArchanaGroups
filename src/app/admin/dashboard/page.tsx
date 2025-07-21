@@ -74,13 +74,22 @@ import {
   CheckCircle,
   Copy,
   X,
-  Settings,
+  Pencil,
 } from 'lucide-react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { trpc } from '@/config/trpc/client';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/shared/components/ui/select";
+import { addMonths, format, startOfMonth, endOfMonth, parseISO } from 'date-fns';
+import { Label } from '@/shared/components/ui/label';
+import { cn } from '@/shared/lib/utils';
 
 // Define Zod schemas
 const addPartnerSchema = z.object({
@@ -92,6 +101,26 @@ const addPartnerSchema = z.object({
 });
 
 type AddPartnerFormData = z.infer<typeof addPartnerSchema>;
+
+// Add validation schemas
+const dispatchRecordSchema = z.object({
+  date: z.string(),
+  vehicleNumber: z.string(),
+  material: z.string(),
+  quantity: z.string(),
+  destination: z.string(),
+  ownerName: z.string(),
+});
+
+const dieselRecordSchema = z.object({
+  date: z.string(),
+  vehicleNumber: z.string(),
+  volume: z.string(),
+  item: z.string(),
+  fuelStation: z.string(),
+  status: z.string(),
+  ownerName: z.string(),
+});
 
 // Define the exact types returned by TRPC
 type PartnerSummary = {
@@ -121,6 +150,187 @@ const AdminDashboard = () => {
   );
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
   const router = useRouter();
+
+  // Data management state
+  const [addDialogOpen, setAddDialogOpen] = useState(false);
+  const [recordDeleteDialogOpen, setRecordDeleteDialogOpen] = useState(false);
+  const [recordType, setRecordType] = useState<'dispatch' | 'diesel'>('dispatch');
+  const [selectedRecord, setSelectedRecord] = useState<any>(null);
+  
+  // Search and filter state
+  const [searchTerm, setSearchTerm] = useState('');
+  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'thisMonth', 'lastMonth', 'custom'
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
+
+  // Filter functions
+  const filterRecords = (records: any[], type: 'dispatch' | 'diesel') => {
+    if (!records) return [];
+    
+    let filtered = [...records];
+
+    // Date filtering
+    if (dateFilter !== 'all') {
+      let start: Date, end: Date;
+      
+      switch (dateFilter) {
+        case 'thisMonth':
+          start = startOfMonth(new Date());
+          end = endOfMonth(new Date());
+          break;
+        case 'lastMonth':
+          start = startOfMonth(addMonths(new Date(), -1));
+          end = endOfMonth(addMonths(new Date(), -1));
+          break;
+        case 'custom':
+          start = startDate ? parseISO(startDate) : new Date(0);
+          end = endDate ? parseISO(endDate) : new Date();
+          break;
+        default:
+          start = new Date(0);
+          end = new Date();
+      }
+
+      filtered = filtered.filter(record => {
+        const recordDate = parseISO(record.date);
+        return recordDate >= start && recordDate <= end;
+      });
+    }
+
+    // Search term filtering
+    if (searchTerm) {
+      const searchLower = searchTerm.toLowerCase();
+      filtered = filtered.filter(record => {
+        if (type === 'dispatch') {
+          return (
+            record.vehicleNumber.toLowerCase().includes(searchLower) ||
+            record.material.toLowerCase().includes(searchLower) ||
+            record.destination.toLowerCase().includes(searchLower) ||
+            record.ownerName.toLowerCase().includes(searchLower)
+          );
+        } else {
+          return (
+            record.vehicleNumber.toLowerCase().includes(searchLower) ||
+            record.item.toLowerCase().includes(searchLower) ||
+            record.fuelStation.toLowerCase().includes(searchLower) ||
+            record.status.toLowerCase().includes(searchLower) ||
+            record.ownerName.toLowerCase().includes(searchLower)
+          );
+        }
+      });
+    }
+
+    return filtered;
+  };
+
+  // Get data
+  const { data: dispatchData, refetch: refetchDispatch } = trpc.admin.getAllDispatchRecords.useQuery();
+  const { data: dieselData, refetch: refetchDiesel } = trpc.admin.getAllDieselRecords.useQuery();
+  
+  // Mutations
+  const addDispatchMutation = trpc.admin.addDispatchRecord.useMutation({
+    onSuccess: () => {
+      toast.success('Dispatch record added successfully');
+      refetchDispatch();
+      setAddDialogOpen(false);
+      recordForm.reset();
+    },
+  });
+  
+  const editDispatchMutation = trpc.admin.editDispatchRecord.useMutation({
+    onSuccess: () => {
+      toast.success('Dispatch record updated successfully');
+      refetchDispatch();
+      setAddDialogOpen(false);
+      recordForm.reset();
+    },
+  });
+  
+  const deleteDispatchMutation = trpc.admin.deleteDispatchRecord.useMutation({
+    onSuccess: () => {
+      toast.success('Dispatch record deleted successfully');
+      refetchDispatch();
+      setRecordDeleteDialogOpen(false);
+    },
+  });
+  
+  const addDieselMutation = trpc.admin.addDieselRecord.useMutation({
+    onSuccess: () => {
+      toast.success('Diesel record added successfully');
+      refetchDiesel();
+      setAddDialogOpen(false);
+      recordForm.reset();
+    },
+  });
+  
+  const editDieselMutation = trpc.admin.editDieselRecord.useMutation({
+    onSuccess: () => {
+      toast.success('Diesel record updated successfully');
+      refetchDiesel();
+      setAddDialogOpen(false);
+      recordForm.reset();
+    },
+  });
+  
+  const deleteDieselMutation = trpc.admin.deleteDieselRecord.useMutation({
+    onSuccess: () => {
+      toast.success('Diesel record deleted successfully');
+      refetchDiesel();
+      setRecordDeleteDialogOpen(false);
+    },
+  });
+
+  // Form
+  const recordForm = useForm({
+    resolver: zodResolver(recordType === 'dispatch' ? dispatchRecordSchema : dieselRecordSchema),
+  });
+
+  // Handlers
+  const handleAddRecord = (type: 'dispatch' | 'diesel') => {
+    setRecordType(type);
+    setSelectedRecord(null);
+    recordForm.reset();
+    setAddDialogOpen(true);
+  };
+
+  const handleEditRecord = (type: 'dispatch' | 'diesel', record: any) => {
+    setRecordType(type);
+    setSelectedRecord(record);
+    recordForm.reset(record);
+    setAddDialogOpen(true);
+  };
+
+  const handleDeleteRecord = (type: 'dispatch' | 'diesel', record: any) => {
+    setRecordType(type);
+    setSelectedRecord(record);
+    setRecordDeleteDialogOpen(true);
+  };
+
+  const handleRecordSubmit = (data: any) => {
+    if (recordType === 'dispatch') {
+      if (selectedRecord) {
+        editDispatchMutation.mutate({ ...data, id: selectedRecord.id });
+      } else {
+        addDispatchMutation.mutate(data);
+      }
+    } else {
+      if (selectedRecord) {
+        editDieselMutation.mutate({ ...data, id: selectedRecord.id });
+      } else {
+        addDieselMutation.mutate(data);
+      }
+    }
+  };
+
+  const handleConfirmDelete = () => {
+    if (!selectedRecord) return;
+    
+    if (recordType === 'dispatch') {
+      deleteDispatchMutation.mutate({ id: selectedRecord.id });
+    } else {
+      deleteDieselMutation.mutate({ id: selectedRecord.id });
+    }
+  };
 
   // Get current user
   const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery();
@@ -440,6 +650,10 @@ const AdminDashboard = () => {
     );
   }
 
+  // Get filtered data
+  const filteredDispatchData = filterRecords(dispatchData || [], 'dispatch');
+  const filteredDieselData = filterRecords(dieselData || [], 'diesel');
+
   return (
     <div className="bg-background min-h-screen">
       {/* Header */}
@@ -482,22 +696,12 @@ const AdminDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           className="mb-8"
         >
-          <div className="flex items-center justify-between">
-            <div>
-              <h2 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
-                Admin Dashboard
-              </h2>
-              <p className="text-muted-foreground">
-                Manage partners, upload data, and monitor system activity
-              </p>
-            </div>
-            <Link href="/admin/data-management">
-              <Button variant="outline" className="flex items-center gap-2">
-                <Settings className="h-4 w-4" />
-                Data Management
-              </Button>
-            </Link>
-          </div>
+          <h2 className="text-foreground mb-2 text-2xl font-bold sm:text-3xl">
+            Admin Dashboard
+          </h2>
+          <p className="text-muted-foreground">
+            Manage partners, upload data, and monitor system activity
+          </p>
         </motion.div>
 
         {/* Main Content */}
@@ -511,10 +715,11 @@ const AdminDashboard = () => {
           }}
           className="space-y-6"
         >
-          <TabsList className="grid w-full grid-cols-3">
+          <TabsList className="grid w-full grid-cols-4">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="partners">Partners</TabsTrigger>
             <TabsTrigger value="uploads">Data Upload</TabsTrigger>
+            <TabsTrigger value="data">Data Management</TabsTrigger>
           </TabsList>
 
           {/* Overview Tab */}
@@ -767,28 +972,7 @@ const AdminDashboard = () => {
                 <CardDescription>
                   Upload dispatch and diesel data Excel files to process partner data
                 </CardDescription>
-                <div className="mt-4 space-y-4">
-                  <div className="rounded-lg bg-blue-50 p-4">
-                    <h4 className="mb-2 font-semibold text-blue-900">File Format Requirements:</h4>
-                    <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                      <div>
-                        <h5 className="mb-1 font-medium text-blue-800">Dispatch Data Format:</h5>
-                        <p className="text-sm text-blue-700">
-                          Columns: Date, Vehicle No, Material, Quantity, Destination, Owner Name
-                        </p>
-                      </div>
-                      <div>
-                        <h5 className="mb-1 font-medium text-blue-800">Diesel Data Format:</h5>
-                        <p className="text-sm text-blue-700">
-                          Columns: Date, Vehicle No, Volume, Item, Fuel Station, Status, Owner Name
-                        </p>
-                        <p className="text-xs text-blue-600 mt-1">
-                          Note: Owner Name will automatically create new partners if they don't exist. Diesel data can be uploaded independently.
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </div>
+                {/* Removed File Format Requirements and notes as per user request */}
               </CardHeader>
               <CardContent>
                 {fileUploadError && (
@@ -891,6 +1075,218 @@ const AdminDashboard = () => {
               </CardContent>
             </Card>
           </TabsContent>
+
+          {/* Data Management Tab */}
+          <TabsContent value="data" className="space-y-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-lg font-semibold">Data Management</h3>
+                <p className="text-muted-foreground">
+                  View, edit, and manage dispatch and diesel records
+                </p>
+              </div>
+            </div>
+
+            {/* Search and Filter Section */}
+            <Card className="mb-6">
+              <CardContent className="pt-6">
+                <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                  <div className="flex flex-col space-y-2">
+                    <Label>Search</Label>
+                    <Input
+                      placeholder="Search records..."
+                      value={searchTerm}
+                      onChange={(e) => setSearchTerm(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                  
+                  <div className="flex flex-col space-y-2">
+                    <Label>Date Range</Label>
+                    <Select value={dateFilter} onValueChange={setDateFilter}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select date range" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">All Time</SelectItem>
+                        <SelectItem value="thisMonth">This Month</SelectItem>
+                        <SelectItem value="lastMonth">Last Month</SelectItem>
+                        <SelectItem value="custom">Custom Range</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  {dateFilter === 'custom' && (
+                    <>
+                      <div className="flex flex-col space-y-2">
+                        <Label>Start Date</Label>
+                        <Input
+                          type="date"
+                          value={startDate}
+                          onChange={(e) => setStartDate(e.target.value)}
+                        />
+                      </div>
+                      <div className="flex flex-col space-y-2">
+                        <Label>End Date</Label>
+                        <Input
+                          type="date"
+                          value={endDate}
+                          onChange={(e) => setEndDate(e.target.value)}
+                        />
+                      </div>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Tabs defaultValue="dispatch" className="space-y-4">
+              <TabsList>
+                <TabsTrigger value="dispatch">
+                  Dispatch Data ({filteredDispatchData?.length || 0})
+                </TabsTrigger>
+                <TabsTrigger value="diesel">
+                  Diesel Data ({filteredDieselData?.length || 0})
+                </TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="dispatch">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle>Dispatch Records</CardTitle>
+                    <Button onClick={() => handleAddRecord('dispatch')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Record
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Vehicle</TableHead>
+                            <TableHead>Material</TableHead>
+                            <TableHead>Quantity</TableHead>
+                            <TableHead>Destination</TableHead>
+                            <TableHead>Owner</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredDispatchData?.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={7} className="text-center py-4">
+                                No records found
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            filteredDispatchData?.map((record) => (
+                              <TableRow key={record.id}>
+                                <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                                <TableCell>{record.vehicleNumber}</TableCell>
+                                <TableCell>{record.material}</TableCell>
+                                <TableCell>{record.quantity}</TableCell>
+                                <TableCell>{record.destination}</TableCell>
+                                <TableCell>{record.ownerName}</TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditRecord('dispatch', record)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteRecord('dispatch', record)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                    </div>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+
+              <TabsContent value="diesel">
+                <Card>
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0">
+                    <CardTitle>Diesel Records</CardTitle>
+                    <Button onClick={() => handleAddRecord('diesel')}>
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Record
+                    </Button>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="rounded-md border">
+                      <Table>
+                        <TableHeader>
+                          <TableRow>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Vehicle</TableHead>
+                            <TableHead>Volume</TableHead>
+                            <TableHead>Item</TableHead>
+                            <TableHead>Fuel Station</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead>Owner</TableHead>
+                            <TableHead>Actions</TableHead>
+                          </TableRow>
+                        </TableHeader>
+                        <TableBody>
+                          {filteredDieselData?.length === 0 ? (
+                            <TableRow>
+                              <TableCell colSpan={8} className="text-center py-4">
+                                No records found
+                              </TableCell>
+                            </TableRow>
+                          ) : (
+                            filteredDieselData?.map((record) => (
+                              <TableRow key={record.id}>
+                                <TableCell>{new Date(record.date).toLocaleDateString()}</TableCell>
+                                <TableCell>{record.vehicleNumber}</TableCell>
+                                <TableCell>{record.volume}</TableCell>
+                                <TableCell>{record.item}</TableCell>
+                                <TableCell>{record.fuelStation}</TableCell>
+                                <TableCell>{record.status}</TableCell>
+                                <TableCell>{record.ownerName}</TableCell>
+                                <TableCell>
+                                  <div className="flex space-x-2">
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleEditRecord('diesel', record)}
+                                    >
+                                      <Pencil className="h-4 w-4" />
+                                    </Button>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => handleDeleteRecord('diesel', record)}
+                                    >
+                                      <Trash2 className="h-4 w-4 text-red-500" />
+                                    </Button>
+                                  </div>
+                                </TableCell>
+                              </TableRow>
+                            ))
+                          )}
+                        </TableBody>
+                      </Table>
+                </div>
+              </CardContent>
+            </Card>
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
         </Tabs>
       </div>
 
@@ -957,6 +1353,29 @@ const AdminDashboard = () => {
               {deletePartnerMutation.isPending
                 ? 'Deleting...'
                 : 'Delete Partner'}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Delete Record Confirmation Dialog */}
+      <AlertDialog open={recordDeleteDialogOpen} onOpenChange={setRecordDeleteDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Delete Record</AlertDialogTitle>
+            <AlertDialogDescription>
+              Are you sure you want to delete this record? This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setRecordDeleteDialogOpen(false)}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Delete Record
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

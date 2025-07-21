@@ -54,6 +54,16 @@ function excelDateToDateString(serial: number): string {
   return date.toISOString().split('T')[0]; // Returns YYYY-MM-DD format
 }
 
+export function GET() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+export function PUT() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+export function DELETE() {
+  return NextResponse.json({ error: "Method not allowed" }, { status: 405 });
+}
+
 export async function POST(req: NextRequest) {
   try {
     // Get form data
@@ -73,271 +83,185 @@ export async function POST(req: NextRequest) {
     let skippedDuplicates = 0;
     const newPartners: string[] = [];
     const errors: string[] = [];
-    
-    // Create a map to store vehicle-to-partner mapping from current dispatch file processing
-    const vehiclePartnerMap = new Map<string, string>();
 
-    // Pre-validate diesel file if provided (now automatically creates partners for new owners)
-    if (dieselFile) {
-      console.log('Pre-validating diesel file and creating missing partners');
-      const dieselRows = await parseXlsxFileContent(dieselFile);
-      const newOwners: string[] = [];
-      const existingOwners: string[] = [];
+    // Fetch all existing partners once
+    const allPartners = await db.select().from(partners);
+    const partnerNameMap = new Map(allPartners.map(p => [p.name.trim(), p]));
+    const partnerIdSet = new Set(allPartners.map(p => p.partnerId));
 
-      // Check all diesel owner names against database
-      for (let i = 1; i < dieselRows.length; i++) {
-        const row = dieselRows[i];
-        if (row.length < 7) continue; // Skip incomplete rows (now expecting 7 columns including owner name)
+    // For batch partner creation
+    const partnersToCreate: { name: string, partnerId: string, password: string }[] = [];
+    const partnerNameToId: Record<string, string> = {};
 
-        const ownerName = row[6]; // Owner name is now the 7th column (index 6)
-        if (!ownerName?.trim()) continue;
+    // For batch dispatch/diesel creation
+    const dispatchToInsert: any[] = [];
+    const dieselToInsert: any[] = [];
 
-        // Check if owner exists in database
-        const existingPartner = await db.query.partners.findFirst({
-          where: eq(partners.name, ownerName.trim()),
+    // Pre-parse files
+    let dispatchRows: any[] = [];
+    let dieselRows: any[] = [];
+    if (dispatchFile) dispatchRows = await parseXlsxFileContent(dispatchFile);
+    if (dieselFile) dieselRows = await parseXlsxFileContent(dieselFile);
+
+    // Identify all new partners from both files
+    const allOwnerNames = new Set<string>();
+    for (let i = 1; i < dispatchRows.length; i++) {
+      const row = dispatchRows[i];
+      if (row.length < 6) continue;
+      const ownerName = row[5];
+      if (ownerName?.trim()) allOwnerNames.add(ownerName.trim());
+    }
+    for (let i = 1; i < dieselRows.length; i++) {
+      const row = dieselRows[i];
+      if (row.length < 7) continue;
+      const ownerName = row[6];
+      if (ownerName?.trim()) allOwnerNames.add(ownerName.trim());
+    }
+    // Find which owners are missing
+    const missingOwners = Array.from(allOwnerNames).filter(name => !partnerNameMap.has(name));
+    // Generate unique partner IDs and passwords
+    for (const ownerName of missingOwners) {
+      let partnerId = generatePartnerId(ownerName);
+      let attempts = 0;
+      while (partnerIdSet.has(partnerId) && attempts < 10) {
+        partnerId = generatePartnerId(ownerName);
+        attempts++;
+      }
+      if (attempts >= 10) {
+        errors.push(`Failed to generate unique partner ID for ${ownerName}`);
+        continue;
+      }
+      const password = generatePassword();
+      partnersToCreate.push({ name: ownerName, partnerId, password });
+      partnerNameToId[ownerName] = partnerId;
+      partnerIdSet.add(partnerId);
+    }
+    // Batch hash passwords
+    const hashedPasswords = await Promise.all(partnersToCreate.map(p => bcrypt.hash(p.password, 12)));
+    // Batch insert partners
+    if (partnersToCreate.length > 0) {
+      const inserted = await db.insert(partners).values(partnersToCreate.map((p, i) => ({
+        name: p.name,
+        partnerId: p.partnerId,
+        password: hashedPasswords[i],
+      }))).returning();
+      for (const p of inserted) {
+        partnerNameMap.set(p.name.trim(), p);
+        newPartners.push(p.name.trim());
+      }
+    }
+    // Fetch all existing dispatch and diesel records for deduplication
+    const allDispatch = await db.select().from(dispatchData);
+    const allDiesel = await db.select().from(dieselData);
+    const dispatchKeySet = new Set(allDispatch.map(d => [d.date, d.vehicleNumber, d.material, d.quantity, d.destination, d.ownerName].join('|')));
+    const dieselKeySet = new Set(allDiesel.map(d => [d.date, d.vehicleNumber, d.volume, d.item, d.fuelStation, d.status].join('|')));
+    // Process dispatch rows
+    for (let i = 1; i < dispatchRows.length; i++) {
+      const row = dispatchRows[i];
+      if (row.length < 6) continue;
+      const [date, vehicleNumber, material, quantity, destination, ownerName] = row;
+
+      // Add defensive checks for required fields
+      if (!date || !vehicleNumber || !material || !quantity || !destination || !ownerName) {
+        failedRows++;
+        errors.push(`Dispatch row ${i + 1} error: Missing required field(s)`);
+        continue;
+      }
+
+      // Safely convert and validate values
+      try {
+        const dateString = typeof date === 'number' ? excelDateToDateString(date) : new Date(date).toISOString().split('T')[0];
+        const safeVehicleNumber = String(vehicleNumber).toUpperCase();
+        const safeMaterial = String(material);
+        const safeQuantity = String(quantity);
+        const safeDestination = String(destination);
+        const safeOwnerName = String(ownerName).trim();
+
+        if (!safeOwnerName) continue;
+        const partner = partnerNameMap.get(safeOwnerName);
+        if (!partner) continue;
+
+        const key = [dateString, safeVehicleNumber, safeMaterial, safeQuantity, safeDestination, safeOwnerName].join('|');
+        if (dispatchKeySet.has(key)) {
+          skippedDuplicates++;
+          continue;
+        }
+
+        dispatchToInsert.push({
+          date: dateString,
+          vehicleNumber: safeVehicleNumber,
+          material: safeMaterial,
+          quantity: safeQuantity,
+          destination: safeDestination,
+          ownerName: safeOwnerName,
+          partnerId: partner.id,
         });
-
-        if (!existingPartner) {
-          newOwners.push(ownerName.trim());
-        } else {
-          existingOwners.push(ownerName.trim());
-        }
-      }
-
-      // Create partners for new owners automatically
-      const uniqueNewOwners = [...new Set(newOwners)];
-      if (uniqueNewOwners.length > 0) {
-        console.log(`Creating ${uniqueNewOwners.length} new partners for diesel data`);
-        
-        for (const ownerName of uniqueNewOwners) {
-          try {
-            // Generate unique partner ID
-            let partnerId = generatePartnerId(ownerName);
-            let attempts = 0;
-
-            while (attempts < 10) {
-              const existing = await db.query.partners.findFirst({
-                where: eq(partners.partnerId, partnerId),
-              });
-
-              if (!existing) break;
-              partnerId = generatePartnerId(ownerName);
-              attempts++;
-            }
-
-            if (attempts >= 10) {
-              console.log(`Failed to generate unique partner ID for ${ownerName}`);
-              continue;
-            }
-
-            // Create new partner
-            const password = generatePassword();
-            const hashedPassword = await bcrypt.hash(password, 12);
-
-            await db.insert(partners).values({
-              name: ownerName,
-              partnerId,
-              password: hashedPassword,
-            });
-
-            console.log(`✅ Created new partner: ${ownerName} (ID: ${partnerId})`);
-            newPartners.push(ownerName);
-          } catch (error) {
-            console.log(`Error creating partner ${ownerName}: ${error}`);
-          }
-        }
-      }
-
-      console.log(`📊 Diesel file validation: ${existingOwners.length} existing owners, ${uniqueNewOwners.length} new owners created`);
-    }
-
-    // Process dispatch file
-    if (dispatchFile) {
-      console.log('Processing dispatch file');
-      const dispatchRows = await parseXlsxFileContent(dispatchFile);
-      console.log({ dispatchRows });
-
-      // Skip header row (assuming first row is header)
-      for (let i = 1; i < dispatchRows.length; i++) {
-        const row = dispatchRows[i];
-        if (row.length < 6) continue; // Skip incomplete rows
-
-        try {
-          const [
-            date,
-            vehicleNumber,
-            material,
-            quantity,
-            destination,
-            ownerName,
-          ] = row;
-
-          if (!ownerName?.trim()) continue;
-
-          // Check if partner exists or create new one
-          let partner = await db.query.partners.findFirst({
-            where: eq(partners.name, ownerName.trim()),
-          });
-
-          if (!partner) {
-            // Generate unique partner ID
-            let partnerId = generatePartnerId(ownerName);
-            let attempts = 0;
-
-            while (attempts < 10) {
-              const existing = await db.query.partners.findFirst({
-                where: eq(partners.partnerId, partnerId),
-              });
-
-              if (!existing) break;
-              partnerId = generatePartnerId(ownerName);
-              attempts++;
-            }
-
-            if (attempts >= 10) {
-              errors.push(
-                `Failed to generate unique partner ID for ${ownerName}`
-              );
-              failedRows++;
-              continue;
-            }
-
-            // Create new partner
-            const password = generatePassword();
-            const hashedPassword = await bcrypt.hash(password, 12);
-
-            const [newPartner] = await db
-              .insert(partners)
-              .values({
-                name: ownerName.trim(),
-                partnerId,
-                password: hashedPassword,
-              })
-              .returning();
-
-            partner = newPartner;
-            newPartners.push(partner.name);
-          }
-
-          // Check if this dispatch record already exists
-          const dateString =
-            typeof date === 'number'
-              ? excelDateToDateString(date)
-              : new Date(date).toISOString().split('T')[0];
-          const existingDispatch = await db.query.dispatchData.findFirst({
-            where: and(
-              eq(dispatchData.date, dateString),
-              eq(dispatchData.vehicleNumber, vehicleNumber.toUpperCase()),
-              eq(dispatchData.material, material),
-              eq(dispatchData.quantity, quantity.toString()),
-              eq(dispatchData.destination, destination),
-              eq(dispatchData.ownerName, ownerName.trim())
-            ),
-          });
-
-          if (existingDispatch) {
-            console.log(
-              `Skipping duplicate dispatch record: ${dateString} - ${vehicleNumber} - ${ownerName}`
-            );
-            skippedDuplicates++;
-            continue; // Skip duplicate record
-          }
-
-          // Insert dispatch data
-          await db.insert(dispatchData).values({
-            date: dateString,
-            vehicleNumber: vehicleNumber.toUpperCase(),
-            material: material,
-            quantity: quantity,
-            destination: destination,
-            ownerName: ownerName.trim(),
-            partnerId: partner.id,
-          });
-
-          // Store the vehicle-partner mapping for diesel processing
-          vehiclePartnerMap.set(vehicleNumber.toUpperCase(), partner.id);
-
-          successfulRows++;
-        } catch (error) {
-          errors.push(
-            `Dispatch row ${i} error: ${error instanceof Error ? error.message : 'Unknown error'}`
-          );
-          failedRows++;
-        }
+        dispatchKeySet.add(key);
+        successfulRows++;
+      } catch (error) {
+        failedRows++;
+        errors.push(`Dispatch row ${i + 1} error: Invalid data format - ${error.message}`);
+        continue;
       }
     }
 
-    // Process diesel file
-    if (dieselFile) {
-      const dieselRows = await parseXlsxFileContent(dieselFile);
-      console.log({ dieselRows });
-      // Skip header row (assuming first row is header)
-      for (let i = 1; i < dieselRows.length; i++) {
-        const row = dieselRows[i];
-        if (row.length < 7) continue; // Skip incomplete rows (now expecting 7 columns including owner name)
+    // Process diesel rows
+    for (let i = 1; i < dieselRows.length; i++) {
+      const row = dieselRows[i];
+      if (row.length < 7) continue;
+      const [date, vehicleNumber, volume, item, fuelStation, status, ownerName] = row;
 
-        try {
-          const [date, vehicleNumber, volume, item, fuelStation, status, ownerName] = row;
-          const upperVehicleNumber = vehicleNumber.toUpperCase();
+      // Add defensive checks for required fields
+      if (!date || !vehicleNumber || !volume || !item || !fuelStation || !status || !ownerName) {
+        failedRows++;
+        errors.push(`Diesel row ${i + 1} error: Missing required field(s)`);
+        continue;
+      }
 
-          // Find partner by owner name (we've already validated that owner exists)
-          const partner = await db.query.partners.findFirst({
-            where: eq(partners.name, ownerName.trim()),
-          });
+      // Safely convert and validate values
+      try {
+        const dateString = typeof date === 'number' ? excelDateToDateString(date) : new Date(date).toISOString().split('T')[0];
+        const safeVehicleNumber = String(vehicleNumber).toUpperCase();
+        const safeVolume = String(volume);
+        const safeItem = String(item);
+        const safeFuelStation = String(fuelStation);
+        const safeStatus = String(status);
+        const safeOwnerName = String(ownerName).trim();
 
-          if (!partner) {
-            errors.push(
-              `Diesel row ${i} error: No partner found for owner ${ownerName}`
-            );
-            failedRows++;
-            continue;
-          }
+        if (!safeOwnerName) continue;
+        const partner = partnerNameMap.get(safeOwnerName);
+        if (!partner) continue;
 
-          // Check if this diesel record already exists
-          const dateString =
-            typeof date === 'number'
-              ? excelDateToDateString(date)
-              : new Date(date).toISOString().split('T')[0];
-          const existingDiesel = await db.query.dieselData.findFirst({
-            where: and(
-              eq(dieselData.date, dateString),
-              eq(dieselData.vehicleNumber, vehicleNumber.toUpperCase()),
-              eq(dieselData.volume, volume.toString()),
-              eq(dieselData.item, item),
-              eq(dieselData.fuelStation, fuelStation),
-              eq(dieselData.status, status)
-            ),
-          });
-
-          if (existingDiesel) {
-            console.log(
-              `Skipping duplicate diesel record: ${dateString} - ${vehicleNumber} - ${fuelStation}`
-            );
-            skippedDuplicates++;
-            continue; // Skip duplicate record
-          }
-
-          // Insert diesel data
-          await db.insert(dieselData).values({
-            date: dateString,
-            vehicleNumber: vehicleNumber.toUpperCase(),
-            volume: volume,
-            item: item,
-            fuelStation: fuelStation,
-            status: status,
-            partnerId: partner.id,
-          });
-
-          successfulRows++;
-        } catch (error) {
-          errors.push(
-            `Diesel row ${i} error: ${error instanceof Error ? error.message : 'Unknown error'}`
-          );
-          failedRows++;
+        const key = [dateString, safeVehicleNumber, safeVolume, safeItem, safeFuelStation, safeStatus].join('|');
+        if (dieselKeySet.has(key)) {
+          skippedDuplicates++;
+          continue;
         }
+
+        dieselToInsert.push({
+          date: dateString,
+          vehicleNumber: safeVehicleNumber,
+          volume: safeVolume,
+          item: safeItem,
+          fuelStation: safeFuelStation,
+          status: safeStatus,
+          partnerId: partner.id,
+        });
+        dieselKeySet.add(key);
+        successfulRows++;
+      } catch (error) {
+        failedRows++;
+        errors.push(`Diesel row ${i + 1} error: Invalid data format - ${error.message}`);
+        continue;
       }
     }
-
+    // Batch insert dispatch and diesel data
+    if (dispatchToInsert.length > 0) {
+      await db.insert(dispatchData).values(dispatchToInsert);
+    }
+    if (dieselToInsert.length > 0) {
+      await db.insert(dieselData).values(dieselToInsert);
+    }
     return NextResponse.json({
       success: true,
       successfulRows,
