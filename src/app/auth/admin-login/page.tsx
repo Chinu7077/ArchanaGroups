@@ -52,6 +52,7 @@ export default function AdminLoginPage() {
     },
   });
 
+  // Check if user is already authenticated
   const checkAuthQuery = trpc.auth.checkAuth.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
@@ -62,22 +63,25 @@ export default function AdminLoginPage() {
       const user = checkAuthQuery.data.user;
       if (user?.role === 'admin') {
         console.log('User already authenticated as admin, redirecting...');
-        window.location.href = '/admin/dashboard'; // ✅ Full reload
+        router.replace('/admin/dashboard');
       } else if (user?.role === 'partner') {
-        console.log('Redirecting partner to partner dashboard...');
-        window.location.href = '/partner/dashboard'; // ✅ Full reload
+        console.log(
+          'Partner trying to access admin login, redirecting to partner dashboard...'
+        );
+        router.replace('/partner/dashboard');
       }
     }
-  }, [checkAuthQuery.data]);
+  }, [checkAuthQuery.data, router]);
 
   const utils = trpc.useUtils();
   const loginMutation = trpc.auth.adminLogin.useMutation({
     onSuccess: (data) => {
       toast.success(`Welcome back, ${data.user?.username || 'Admin'}`);
+      // Invalidate auth queries to update state immediately
       utils.auth.getUser.invalidate();
       utils.auth.checkAuth.invalidate();
-      // ✅ Force full reload to refresh auth state everywhere
-      window.location.href = '/admin/dashboard';
+      // Use replace to prevent back navigation to login
+      router.replace('/admin/dashboard');
     },
     onError: (error) => {
       toast.error(`Login failed: ${error.message}`);
@@ -104,6 +108,7 @@ export default function AdminLoginPage() {
         transition={{ duration: 0.8 }}
         className="relative z-10 w-full max-w-md"
       >
+        {/* Back button */}
         <Button
           variant="ghost"
           onClick={() => router.push('/transport')}
@@ -216,6 +221,7 @@ export default function AdminLoginPage() {
           </CardContent>
         </Card>
 
+        {/* Company branding */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
