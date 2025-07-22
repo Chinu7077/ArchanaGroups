@@ -208,13 +208,25 @@ export async function POST(req: NextRequest) {
     // Process diesel rows
     for (let i = 1; i < dieselRows.length; i++) {
       const row = dieselRows[i];
-      if (row.length < 7) continue;
+      if (row.length < 7) {
+        failedRows++;
+        errors.push(`Diesel row ${i + 1} error: Row has insufficient columns (expected 7, got ${row.length})`);
+        continue;
+      }
       const [date, vehicleNumber, volume, item, fuelStation, status, ownerName] = row;
 
       // Add defensive checks for required fields
       if (!date || !vehicleNumber || !volume || !item || !fuelStation || !status || !ownerName) {
         failedRows++;
-        errors.push(`Diesel row ${i + 1} error: Missing required field(s)`);
+        const missingFields = [];
+        if (!date) missingFields.push('date');
+        if (!vehicleNumber) missingFields.push('vehicle number');
+        if (!volume) missingFields.push('volume');
+        if (!item) missingFields.push('item');
+        if (!fuelStation) missingFields.push('fuel station');
+        if (!status) missingFields.push('status');
+        if (!ownerName) missingFields.push('owner name');
+        errors.push(`Diesel row ${i + 1} error: Missing required field(s): ${missingFields.join(', ')}`);
         continue;
       }
 
@@ -228,9 +240,32 @@ export async function POST(req: NextRequest) {
         const safeStatus = String(status);
         const safeOwnerName = String(ownerName).trim();
 
-        if (!safeOwnerName) continue;
+        // Validate numeric volume
+        if (isNaN(parseFloat(safeVolume))) {
+          failedRows++;
+          errors.push(`Diesel row ${i + 1} error: Volume must be a valid number`);
+          continue;
+        }
+
+        // Validate date format
+        if (isNaN(new Date(dateString).getTime())) {
+          failedRows++;
+          errors.push(`Diesel row ${i + 1} error: Invalid date format`);
+          continue;
+        }
+
+        if (!safeOwnerName) {
+          failedRows++;
+          errors.push(`Diesel row ${i + 1} error: Owner name cannot be empty`);
+          continue;
+        }
+
         const partner = partnerNameMap.get(safeOwnerName);
-        if (!partner) continue;
+        if (!partner) {
+          failedRows++;
+          errors.push(`Diesel row ${i + 1} error: Partner "${safeOwnerName}" not found`);
+          continue;
+        }
 
         const key = [dateString, safeVehicleNumber, safeVolume, safeItem, safeFuelStation, safeStatus].join('|');
         if (dieselKeySet.has(key)) {
@@ -251,16 +286,27 @@ export async function POST(req: NextRequest) {
         successfulRows++;
       } catch (error) {
         failedRows++;
-        errors.push(`Diesel row ${i + 1} error: Invalid data format - ${error.message}`);
+        errors.push(`Diesel row ${i + 1} error: ${error instanceof Error ? error.message : 'Invalid data format'}`);
         continue;
       }
     }
     // Batch insert dispatch and diesel data
-    if (dispatchToInsert.length > 0) {
-      await db.insert(dispatchData).values(dispatchToInsert);
-    }
-    if (dieselToInsert.length > 0) {
-      await db.insert(dieselData).values(dieselToInsert);
+    try {
+      if (dispatchToInsert.length > 0) {
+        await db.insert(dispatchData).values(dispatchToInsert);
+      }
+      if (dieselToInsert.length > 0) {
+        await db.insert(dieselData).values(dieselToInsert);
+      }
+    } catch (error) {
+      console.error('Database insertion error:', error);
+      return NextResponse.json({
+        error: `Failed to save data: ${error instanceof Error ? error.message : 'Unknown error'}`,
+        successfulRows,
+        failedRows,
+        skippedDuplicates,
+        errors,
+      }, { status: 500 });
     }
     return NextResponse.json({
       success: true,

@@ -27,6 +27,13 @@ export interface Context {
       expiresAt: Date;
     };
   } | null;
+  user?: {
+    id: string;
+    role: string;
+    partnerId: string;
+    username: string;
+    name: string;
+  } | null;
   req: CreateNextContextOptions['req'];
   res: CreateNextContextOptions['res'];
 }
@@ -68,9 +75,19 @@ export async function createTRPCContext(
     console.log('Better Auth session not available:', error);
   }
 
+  // Ensure we have a valid user object in the context
+  const user = session ? {
+    id: session.userId,
+    role: session.role,
+    partnerId: session.partnerId,
+    username: session.username,
+    name: session.name,
+  } : null;
+
   return {
     session,
     betterAuthSession: betterAuthSession as Context['betterAuthSession'],
+    user,
     req,
     res,
   };

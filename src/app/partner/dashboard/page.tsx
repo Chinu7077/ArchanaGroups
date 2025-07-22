@@ -77,8 +77,14 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 
 const supportQuerySchema = z.object({
-  subject: z.string().min(1, 'Subject is required').max(200, 'Subject is too long'),
-  message: z.string().min(1, 'Message is required').max(2000, 'Message is too long'),
+  subject: z
+    .string()
+    .min(1, 'Subject is required')
+    .max(200, 'Subject is too long'),
+  message: z
+    .string()
+    .min(1, 'Message is required')
+    .max(2000, 'Message is too long'),
   priority: z.enum(['low', 'normal', 'high']).default('normal'),
 });
 
@@ -89,7 +95,9 @@ const PartnerDashboard = () => {
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dateFilter, setDateFilter] = useState<'1-15' | '16-31' | 'all'>('all');
-  const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'dispatch');
+  const [activeTab, setActiveTab] = useState(
+    searchParams.get('tab') || 'dispatch'
+  );
   const router = useRouter();
   const [showSupportDialog, setShowSupportDialog] = useState(false);
 
@@ -121,7 +129,8 @@ const PartnerDashboard = () => {
     });
 
   // Get support queries
-  const { data: supportQueries, refetch: refetchQueries } = trpc.data.getSupportQueries.useQuery();
+  const { data: supportQueries, refetch: refetchQueries } =
+    trpc.data.getSupportQueries.useQuery();
 
   // Logout mutation
   const utils = trpc.useUtils();
@@ -170,15 +179,23 @@ const PartnerDashboard = () => {
 
   const handleDownloadExcel = async () => {
     const XLSX = await import('xlsx');
-    
+
     // Create workbook
     const workbook = XLSX.utils.book_new();
-    
+
     if (activeTab === 'dispatch') {
       // Prepare dispatch data
       const dispatchWorksheetData = [];
-      dispatchWorksheetData.push(['Date', 'Vehicle No', 'Material', 'Quantity', 'Unit', 'Destination', 'Status']);
-      
+      dispatchWorksheetData.push([
+        'Date',
+        'Vehicle No',
+        'Material',
+        'Quantity',
+        'Unit',
+        'Destination',
+        'Status',
+      ]);
+
       if (dispatchData?.data) {
         dispatchData.data.forEach((item) => {
           dispatchWorksheetData.push([
@@ -188,24 +205,39 @@ const PartnerDashboard = () => {
             item.quantity,
             'T',
             item.destination,
-            'Completed'
+            'Completed',
           ]);
         });
       }
-      
+
       // Create worksheet and add to workbook
       const dispatchWorksheet = XLSX.utils.aoa_to_sheet(dispatchWorksheetData);
-      XLSX.utils.book_append_sheet(workbook, dispatchWorksheet, 'Dispatch Data');
-      
+      XLSX.utils.book_append_sheet(
+        workbook,
+        dispatchWorksheet,
+        'Dispatch Data'
+      );
+
       // Download the Excel file
-      XLSX.writeFile(workbook, `dispatch_data_${selectedMonth}_${selectedYear}.xlsx`);
-      
+      XLSX.writeFile(
+        workbook,
+        `dispatch_data_${selectedMonth}_${selectedYear}.xlsx`
+      );
+
       toast.success('Dispatch data Excel file has been downloaded');
     } else if (activeTab === 'diesel') {
       // Prepare diesel data
       const dieselWorksheetData = [];
-      dieselWorksheetData.push(['Date', 'Vehicle No', 'Item', 'Volume', 'Unit', 'Fuel Station', 'Status']);
-      
+      dieselWorksheetData.push([
+        'Date',
+        'Vehicle No',
+        'Item',
+        'Volume',
+        'Unit',
+        'Fuel Station',
+        'Status',
+      ]);
+
       if (dieselData?.data) {
         dieselData.data.forEach((item) => {
           dieselWorksheetData.push([
@@ -215,18 +247,21 @@ const PartnerDashboard = () => {
             item.volume,
             'L',
             item.fuelStation,
-            item.status
+            item.status,
           ]);
         });
       }
-      
+
       // Create worksheet and add to workbook
       const dieselWorksheet = XLSX.utils.aoa_to_sheet(dieselWorksheetData);
       XLSX.utils.book_append_sheet(workbook, dieselWorksheet, 'Diesel Data');
-      
+
       // Download the Excel file
-      XLSX.writeFile(workbook, `diesel_data_${selectedMonth}_${selectedYear}.xlsx`);
-      
+      XLSX.writeFile(
+        workbook,
+        `diesel_data_${selectedMonth}_${selectedYear}.xlsx`
+      );
+
       toast.success('Diesel data Excel file has been downloaded');
     }
   };
@@ -286,7 +321,7 @@ const PartnerDashboard = () => {
           <div className="flex h-16 items-center justify-between">
             <div className="flex items-center space-x-4">
               <div className="flex items-center space-x-2">
-                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-white border border-gray-200">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-gray-200 bg-white">
                   <img
                     src="/AT.png"
                     alt="Archana Transport Logo"
@@ -398,7 +433,16 @@ const PartnerDashboard = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="1-15">1st to 15th</SelectItem>
-                <SelectItem value="16-31">16th to {getSecondHalfEndDate(selectedMonth, selectedYear)}{getSecondHalfEndDate(selectedMonth, selectedYear) === 31 ? 'st' : getSecondHalfEndDate(selectedMonth, selectedYear) === 30 ? 'th' : getSecondHalfEndDate(selectedMonth, selectedYear) === 29 ? 'th' : 'th'}</SelectItem>
+                <SelectItem value="16-31">
+                  16th to {getSecondHalfEndDate(selectedMonth, selectedYear)}
+                  {getSecondHalfEndDate(selectedMonth, selectedYear) === 31
+                    ? 'st'
+                    : getSecondHalfEndDate(selectedMonth, selectedYear) === 30
+                      ? 'th'
+                      : getSecondHalfEndDate(selectedMonth, selectedYear) === 29
+                        ? 'th'
+                        : 'th'}
+                </SelectItem>
                 <SelectItem value="all">Full Month</SelectItem>
               </SelectContent>
             </Select>
@@ -478,14 +522,16 @@ const PartnerDashboard = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-white to-gray-50">
-            <CardHeader className="bg-gradient-to-r from-red-600 to-red-800 text-white rounded-t-lg">
+          <Card className="border-0 bg-gradient-to-br from-white to-gray-50 shadow-lg">
+            <CardHeader className="rounded-t-lg bg-gradient-to-r from-red-600 to-red-800 text-white">
               <div className="flex items-center space-x-3">
-                <div className="p-2 bg-white/20 rounded-lg">
+                <div className="rounded-lg bg-white/20 p-2">
                   <Truck className="h-6 w-6" />
                 </div>
                 <div>
-                  <CardTitle className="text-white text-xl">Transportation Data</CardTitle>
+                  <CardTitle className="text-xl text-white">
+                    Transportation Data
+                  </CardTitle>
                   <CardDescription className="text-red-100">
                     View your dispatch and diesel consumption records
                   </CardDescription>
@@ -503,17 +549,17 @@ const PartnerDashboard = () => {
                 }}
                 className="w-full"
               >
-                <TabsList className="grid w-full grid-cols-2 bg-gray-100 p-1 rounded-xl">
+                <TabsList className="grid w-full grid-cols-2 rounded-xl bg-gray-100 p-1">
                   <TabsTrigger
                     value="dispatch"
-                    className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-red-600 rounded-lg transition-all duration-200"
+                    className="flex items-center space-x-2 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-md"
                   >
                     <Truck className="h-4 w-4" />
                     <span className="font-medium">Dispatch Data</span>
                   </TabsTrigger>
                   <TabsTrigger
                     value="diesel"
-                    className="flex items-center space-x-2 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-red-600 rounded-lg transition-all duration-200"
+                    className="flex items-center space-x-2 rounded-lg transition-all duration-200 data-[state=active]:bg-white data-[state=active]:text-red-600 data-[state=active]:shadow-md"
                   >
                     <Fuel className="h-4 w-4" />
                     <span className="font-medium">Diesel Data</span>
@@ -529,46 +575,47 @@ const PartnerDashboard = () => {
                     </div>
                   ) : !dispatchData?.data.length ? (
                     <div className="py-16 text-center">
-                      <div className="mx-auto mb-6 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
-                        <FileX className="text-red-600 h-12 w-12" />
+                      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-red-100">
+                        <FileX className="h-12 w-12 text-red-600" />
                       </div>
-                      <h3 className="text-gray-900 mb-3 text-xl font-semibold">
+                      <h3 className="mb-3 text-xl font-semibold text-gray-900">
                         No Dispatch Records Found
                       </h3>
-                      <p className="text-gray-600 text-base max-w-md mx-auto">
-                        No dispatch data available for the selected period. Try changing the date range or month.
+                      <p className="mx-auto max-w-md text-base text-gray-600">
+                        No dispatch data available for the selected period. Try
+                        changing the date range or month.
                       </p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-200">
-                            <TableHead className="font-semibold text-red-900 py-4">
+                          <TableRow className="border-b-2 border-red-200 bg-gradient-to-r from-red-50 to-red-100">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Calendar className="h-4 w-4" />
                                 <span>Date</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Truck className="h-4 w-4" />
                                 <span>Vehicle No</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Package className="h-4 w-4" />
                                 <span>Material</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Scale className="h-4 w-4" />
                                 <span>Unload Quantity</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <MapPin className="h-4 w-4" />
                                 <span>Unload Point</span>
@@ -578,32 +625,45 @@ const PartnerDashboard = () => {
                         </TableHeader>
                         <TableBody>
                           {dispatchData.data.map((item, index) => (
-                            <TableRow key={index} className="hover:bg-red-50 transition-colors duration-200 border-b border-gray-100">
-                              <TableCell className="font-medium py-4">
+                            <TableRow
+                              key={index}
+                              className="border-b border-gray-100 transition-colors duration-200 hover:bg-red-50"
+                            >
+                              <TableCell className="py-4 font-medium">
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                  <span className="text-gray-900">{new Date(item.date).toLocaleDateString()}</span>
+                                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                  <span className="text-gray-900">
+                                    {new Date(item.date).toLocaleDateString()}
+                                  </span>
                                 </div>
                               </TableCell>
-                              <TableCell className="font-mono text-sm py-4">
-                                <div className="bg-gray-100 px-3 py-1 rounded-lg inline-block">
+                              <TableCell className="py-4 font-mono text-sm">
+                                <div className="inline-block rounded-lg bg-gray-100 px-3 py-1">
                                   {item.vehicleNumber.replace(/-/g, '')}
                                 </div>
                               </TableCell>
                               <TableCell className="py-4">
-                                <Badge variant="secondary" className="bg-red-100 text-red-800 hover:bg-red-200 border-red-200">
+                                <Badge
+                                  variant="secondary"
+                                  className="border-red-200 bg-red-100 text-red-800 hover:bg-red-200"
+                                >
                                   {item.material}
                                 </Badge>
                               </TableCell>
                               <TableCell className="py-4">
-                                <Badge variant="outline" className="font-mono bg-black text-white border-black hover:bg-gray-800">
+                                <Badge
+                                  variant="outline"
+                                  className="border-black bg-black font-mono text-white hover:bg-gray-800"
+                                >
                                   {parseFloat(item.quantity).toFixed(2)} M.T
                                 </Badge>
                               </TableCell>
                               <TableCell className="py-4">
-                                <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
-                                  <MapPin className="text-red-500 h-4 w-4" />
-                                  <span className="text-sm text-gray-700 font-medium">{item.destination}</span>
+                                <div className="flex items-center space-x-2 rounded-lg bg-gray-50 px-3 py-2">
+                                  <MapPin className="h-4 w-4 text-red-500" />
+                                  <span className="text-sm font-medium text-gray-700">
+                                    {item.destination}
+                                  </span>
                                 </div>
                               </TableCell>
                             </TableRow>
@@ -623,46 +683,47 @@ const PartnerDashboard = () => {
                     </div>
                   ) : !dieselData?.data.length ? (
                     <div className="py-16 text-center">
-                      <div className="mx-auto mb-6 w-24 h-24 bg-red-100 rounded-full flex items-center justify-center">
-                        <FileX className="text-red-600 h-12 w-12" />
+                      <div className="mx-auto mb-6 flex h-24 w-24 items-center justify-center rounded-full bg-red-100">
+                        <FileX className="h-12 w-12 text-red-600" />
                       </div>
-                      <h3 className="text-gray-900 mb-3 text-xl font-semibold">
+                      <h3 className="mb-3 text-xl font-semibold text-gray-900">
                         No Diesel Records Found
                       </h3>
-                      <p className="text-gray-600 text-base max-w-md mx-auto">
-                        No diesel data available for the selected period. Try changing the date range or month.
+                      <p className="mx-auto max-w-md text-base text-gray-600">
+                        No diesel data available for the selected period. Try
+                        changing the date range or month.
                       </p>
                     </div>
                   ) : (
                     <div className="overflow-x-auto">
                       <Table>
                         <TableHeader>
-                          <TableRow className="bg-gradient-to-r from-red-50 to-red-100 border-b-2 border-red-200">
-                            <TableHead className="font-semibold text-red-900 py-4">
+                          <TableRow className="border-b-2 border-red-200 bg-gradient-to-r from-red-50 to-red-100">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Calendar className="h-4 w-4" />
                                 <span>Date</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Truck className="h-4 w-4" />
                                 <span>Vehicle No</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Fuel className="h-4 w-4" />
                                 <span>Volume</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <Building2 className="h-4 w-4" />
                                 <span>Fuel Station</span>
                               </div>
                             </TableHead>
-                            <TableHead className="font-semibold text-red-900 py-4">
+                            <TableHead className="py-4 font-semibold text-red-900">
                               <div className="flex items-center space-x-2">
                                 <CheckCircle className="h-4 w-4" />
                                 <span>Status</span>
@@ -672,26 +733,36 @@ const PartnerDashboard = () => {
                         </TableHeader>
                         <TableBody>
                           {dieselData.data.map((item, index) => (
-                            <TableRow key={index} className="hover:bg-red-50 transition-colors duration-200 border-b border-gray-100">
-                              <TableCell className="font-medium py-4">
+                            <TableRow
+                              key={index}
+                              className="border-b border-gray-100 transition-colors duration-200 hover:bg-red-50"
+                            >
+                              <TableCell className="py-4 font-medium">
                                 <div className="flex items-center space-x-2">
-                                  <div className="w-2 h-2 bg-red-500 rounded-full"></div>
-                                  <span className="text-gray-900">{new Date(item.date).toLocaleDateString()}</span>
+                                  <div className="h-2 w-2 rounded-full bg-red-500"></div>
+                                  <span className="text-gray-900">
+                                    {new Date(item.date).toLocaleDateString()}
+                                  </span>
                                 </div>
                               </TableCell>
-                              <TableCell className="font-mono text-sm py-4">
-                                <div className="bg-gray-100 px-3 py-1 rounded-lg inline-block">
+                              <TableCell className="py-4 font-mono text-sm">
+                                <div className="inline-block rounded-lg bg-gray-100 px-3 py-1">
                                   {item.vehicleNumber.replace(/-/g, '')}
                                 </div>
                               </TableCell>
                               <TableCell className="py-4">
-                                <Badge variant="outline" className="font-mono bg-black text-white border-black hover:bg-gray-800">
+                                <Badge
+                                  variant="outline"
+                                  className="border-black bg-black font-mono text-white hover:bg-gray-800"
+                                >
                                   {parseFloat(item.volume).toFixed(0)} L
                                 </Badge>
                               </TableCell>
                               <TableCell className="py-4">
-                                <div className="bg-gray-50 px-3 py-2 rounded-lg">
-                                  <span className="text-sm text-gray-700 font-medium">{item.fuelStation}</span>
+                                <div className="rounded-lg bg-gray-50 px-3 py-2">
+                                  <span className="text-sm font-medium text-gray-700">
+                                    {item.fuelStation}
+                                  </span>
                                 </div>
                               </TableCell>
                               <TableCell className="py-4">
@@ -700,15 +771,15 @@ const PartnerDashboard = () => {
                                     item.status === 'completed'
                                       ? 'default'
                                       : item.status === 'pending'
-                                      ? 'outline'
-                                      : 'secondary'
+                                        ? 'outline'
+                                        : 'secondary'
                                   }
                                   className={`capitalize ${
                                     item.status === 'completed'
-                                      ? 'bg-red-100 text-red-800 border-red-200 hover:bg-red-200'
+                                      ? 'border-red-200 bg-red-100 text-red-800 hover:bg-red-200'
                                       : item.status === 'pending'
-                                      ? 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200'
-                                      : 'bg-gray-100 text-gray-800 border-gray-200 hover:bg-gray-200'
+                                        ? 'border-yellow-200 bg-yellow-100 text-yellow-800 hover:bg-yellow-200'
+                                        : 'border-gray-200 bg-gray-100 text-gray-800 hover:bg-gray-200'
                                   }`}
                                 >
                                   {item.status}
@@ -727,11 +798,11 @@ const PartnerDashboard = () => {
         </motion.div>
 
         {/* Help & Support Button */}
-        <div className="fixed bottom-8 right-8">
+        <div className="fixed right-8 bottom-8">
           <Dialog open={showSupportDialog} onOpenChange={setShowSupportDialog}>
             <DialogTrigger asChild>
               <Button
-                className="bg-blue-600 hover:bg-blue-700 shadow-lg"
+                className="bg-blue-600 shadow-lg hover:bg-blue-700"
                 size="lg"
               >
                 <HelpCircle className="mr-2 h-5 w-5" />
@@ -742,11 +813,15 @@ const PartnerDashboard = () => {
               <DialogHeader>
                 <DialogTitle>Submit a Query</DialogTitle>
                 <DialogDescription>
-                  Need help or have a question? Submit your query here and we'll get back to you as soon as possible.
+                  Need help or have a question? Submit your query here and we'll
+                  get back to you as soon as possible.
                 </DialogDescription>
               </DialogHeader>
               <Form {...supportForm}>
-                <form onSubmit={supportForm.handleSubmit(onSubmitQuery)} className="space-y-4">
+                <form
+                  onSubmit={supportForm.handleSubmit(onSubmitQuery)}
+                  className="space-y-4"
+                >
                   <FormField
                     control={supportForm.control}
                     name="subject"
@@ -754,7 +829,10 @@ const PartnerDashboard = () => {
                       <FormItem>
                         <FormLabel>Subject</FormLabel>
                         <FormControl>
-                          <Input placeholder="Brief description of your query" {...field} />
+                          <Input
+                            placeholder="Brief description of your query"
+                            {...field}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -814,7 +892,9 @@ const PartnerDashboard = () => {
                       type="submit"
                       disabled={submitQueryMutation.isPending}
                     >
-                      {submitQueryMutation.isPending ? 'Submitting...' : 'Submit Query'}
+                      {submitQueryMutation.isPending
+                        ? 'Submitting...'
+                        : 'Submit Query'}
                     </Button>
                   </div>
                 </form>
@@ -842,7 +922,9 @@ const PartnerDashboard = () => {
                       <CardHeader>
                         <div className="flex items-center justify-between">
                           <div>
-                            <CardTitle className="text-base">{query.subject}</CardTitle>
+                            <CardTitle className="text-base">
+                              {query.subject}
+                            </CardTitle>
                             <p className="text-sm text-gray-500">
                               {new Date(query.createdAt).toLocaleDateString()}
                             </p>
@@ -852,8 +934,8 @@ const PartnerDashboard = () => {
                               query.status === 'resolved'
                                 ? 'default'
                                 : query.status === 'in_progress'
-                                ? 'secondary'
-                                : 'outline'
+                                  ? 'secondary'
+                                  : 'outline'
                             }
                           >
                             {query.status.replace('_', ' ')}
@@ -861,11 +943,15 @@ const PartnerDashboard = () => {
                         </div>
                       </CardHeader>
                       <CardContent>
-                        <p className="text-sm whitespace-pre-wrap">{query.message}</p>
+                        <p className="text-sm whitespace-pre-wrap">
+                          {query.message}
+                        </p>
                         {query.response && (
-                          <div className="mt-4 p-4 bg-white rounded-md">
-                            <p className="text-sm font-semibold text-gray-700">Response:</p>
-                            <p className="text-sm mt-2">{query.response}</p>
+                          <div className="mt-4 rounded-md bg-white p-4">
+                            <p className="text-sm font-semibold text-gray-700">
+                              Response:
+                            </p>
+                            <p className="mt-2 text-sm">{query.response}</p>
                           </div>
                         )}
                       </CardContent>
