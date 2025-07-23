@@ -118,34 +118,68 @@ export async function verifySession() {
     return null;
   }
 
-  const session = await decrypt(cookie);
+  try {
+    const session = await decrypt(cookie);
 
-  if (!session?.userId) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Session decryption failed or no userId');
+    if (!session?.userId) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Session decryption failed or no userId');
+      }
+      // Clear invalid session cookie immediately
+      await deleteSession();
+      return null;
     }
+
+    // Check if session is expired with a 5-minute buffer
+    const now = new Date();
+    const expiresAt = new Date(session.expiresAt);
+    const bufferTime = 5 * 60 * 1000; // 5 minutes in milliseconds
+    
+    if (expiresAt.getTime() - bufferTime <= now.getTime()) {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Session expired or about to expire, clearing...');
+      }
+      // Clear expired session
+      await deleteSession();
+      return null;
+    }
+
+    return {
+      userId: session.userId,
+      role: session.role,
+      expiresAt: session.expiresAt,
+      partnerId: session.partnerId || null,
+      username: session.username || null,
+      name: session.name || null,
+    };
+  } catch (error) {
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Session verification error:', error);
+    }
+    // Clear corrupted session
+    await deleteSession();
     return null;
   }
-
-  // Check if session is expired
-  if (session.expiresAt && new Date() > session.expiresAt) {
-    if (process.env.NODE_ENV === 'development') {
-      console.log('Session expired:', {
-        expiresAt: session.expiresAt,
-        now: new Date(),
-      });
-    }
-    // Clear expired session
-    cookieStore.delete('session');
-    return null;
-  }
-
-  return session;
 }
 
 export async function deleteSession() {
   const cookieStore = await cookies();
+  
+  // Clear session cookie with multiple approaches to ensure removal
+  cookieStore.set('session', '', {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === 'production',
+    expires: new Date(0), // Set to past date
+    sameSite: 'lax',
+    path: '/',
+  });
+  
+  // Also delete the cookie
   cookieStore.delete('session');
+  
+  if (process.env.NODE_ENV === 'development') {
+    console.log('Session deleted and cookie cleared');
+  }
 }
 
 export async function updateSession() {

@@ -92,17 +92,24 @@ type SupportQueryFormData = z.infer<typeof supportQuerySchema>;
 
 const PartnerDashboard = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // ALL STATE HOOKS MUST BE AT THE TOP
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
   const [dateFilter, setDateFilter] = useState<'1-15' | '16-31' | 'all'>('all');
   const [activeTab, setActiveTab] = useState(
     searchParams.get('tab') || 'dispatch'
   );
-  const router = useRouter();
   const [showSupportDialog, setShowSupportDialog] = useState(false);
 
-  // Get current user
-  const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery();
+  // ALL tRPC HOOKS MUST BE AT THE TOP LEVEL
+  const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache auth state
+  });
 
   // Get dashboard summary
   const { data: summaryData, isLoading: summaryLoading } =
@@ -132,7 +139,7 @@ const PartnerDashboard = () => {
   const { data: supportQueries, refetch: refetchQueries } =
     trpc.data.getSupportQueries.useQuery();
 
-  // Logout mutation
+  // ALL MUTATION HOOKS MUST BE AT THE TOP LEVEL
   const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -155,6 +162,72 @@ const PartnerDashboard = () => {
       }, 100);
     },
   });
+
+  // ALL FORM HOOKS MUST BE AT THE TOP LEVEL
+  const supportForm = useForm<SupportQueryFormData>({
+    resolver: zodResolver(supportQuerySchema),
+    defaultValues: {
+      subject: '',
+      message: '',
+      priority: 'normal',
+    },
+  });
+
+  const submitQueryMutation = trpc.data.submitSupportQuery.useMutation({
+    onSuccess: () => {
+      toast.success('Your support query has been submitted successfully');
+      supportForm.reset();
+      setShowSupportDialog(false);
+      refetchQueries();
+    },
+    onError: (error) => {
+      toast.error(error.message || 'Failed to submit support query');
+    },
+  });
+
+  // ALL useEffect HOOKS MUST BE AT THE TOP LEVEL
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') || 'dispatch');
+  }, [searchParams]);
+
+  // Handle authentication redirect in useEffect to avoid render-time navigation
+  useEffect(() => {
+    if (!userLoading && (!user || user.role !== 'partner')) {
+      router.push('/auth/partner-login');
+    }
+  }, [user, userLoading, router]);
+
+  // Additional authentication check (moved from bottom of component)
+  useEffect(() => {
+    if (!userLoading && !user) {
+      router.push('/auth/partner-login');
+    }
+  }, [user, userLoading, router]);
+
+  // NOW WE CAN HAVE CONDITIONAL RETURNS AFTER ALL HOOKS
+  // Show loading state while checking authentication
+  if (userLoading) {
+    return (
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <span>Verifying authentication...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show redirecting state if not authenticated
+  if (!user || user.role !== 'partner') {
+    return (
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <span>Redirecting...</span>
+        </div>
+      </div>
+    );
+  }
 
   const handleLogout = async () => {
     logoutMutation.mutate();
@@ -266,39 +339,9 @@ const PartnerDashboard = () => {
     }
   };
 
-  // Add form
-  const supportForm = useForm<SupportQueryFormData>({
-    resolver: zodResolver(supportQuerySchema),
-    defaultValues: {
-      subject: '',
-      message: '',
-      priority: 'normal',
-    },
-  });
-
-  // Add mutation
-  const submitQueryMutation = trpc.data.submitSupportQuery.useMutation({
-    onSuccess: () => {
-      toast.success('Your query has been submitted successfully');
-      supportForm.reset();
-      setShowSupportDialog(false);
-      refetchQueries();
-    },
-    onError: (error) => {
-      toast.error(`Failed to submit query: ${error.message}`);
-    },
-  });
-
   const onSubmitQuery = (data: SupportQueryFormData) => {
     submitQueryMutation.mutate(data);
   };
-
-  // Redirect if not authenticated
-  useEffect(() => {
-    if (!userLoading && !user) {
-      router.push('/auth/partner-login');
-    }
-  }, [user, userLoading, router]);
 
   if (userLoading || !user) {
     return (

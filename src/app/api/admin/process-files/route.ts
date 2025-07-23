@@ -158,32 +158,54 @@ export async function POST(req: NextRequest) {
     // Process dispatch rows
     for (let i = 1; i < dispatchRows.length; i++) {
       const row = dispatchRows[i];
-      if (row.length < 6) continue;
+      if (row.length < 6) {
+        console.log(`Dispatch row ${i + 1} skipped: insufficient columns (${row.length}/6)`);
+        continue;
+      }
       const [date, vehicleNumber, material, quantity, destination, ownerName] = row;
 
-      // Add defensive checks for required fields
-      if (!date || !vehicleNumber || !material || !quantity || !destination || !ownerName) {
+      // Convert all values to strings first to handle 0, decimals, and other values properly
+      const dateValue = String(date ?? '').trim();
+      const vehicleNumberValue = String(vehicleNumber ?? '').trim();
+      const materialValue = String(material ?? '').trim();
+      const quantityValue = String(quantity ?? '').trim();
+      const destinationValue = String(destination ?? '').trim();
+      const ownerNameValue = String(ownerName ?? '').trim();
+
+      // Only check for truly empty values (empty strings after trimming)
+      if (!dateValue || !vehicleNumberValue || !materialValue || !quantityValue || !destinationValue || !ownerNameValue) {
         failedRows++;
-        errors.push(`Dispatch row ${i + 1} error: Missing required field(s)`);
+        const missingFields = [];
+        if (!dateValue) missingFields.push('date');
+        if (!vehicleNumberValue) missingFields.push('vehicleNumber');
+        if (!materialValue) missingFields.push('material');
+        if (!quantityValue) missingFields.push('quantity');
+        if (!destinationValue) missingFields.push('destination');
+        if (!ownerNameValue) missingFields.push('ownerName');
+        errors.push(`Dispatch row ${i + 1} error: Missing required field(s): ${missingFields.join(', ')}`);
+        console.log(`Dispatch row ${i + 1} failed validation:`, { date: dateValue, vehicleNumber: vehicleNumberValue, material: materialValue, quantity: quantityValue, destination: destinationValue, ownerName: ownerNameValue, missingFields });
         continue;
       }
 
       // Safely convert and validate values
       try {
-        const dateString = typeof date === 'number' ? excelDateToDateString(date) : new Date(date).toISOString().split('T')[0];
-        const safeVehicleNumber = String(vehicleNumber).toUpperCase();
-        const safeMaterial = String(material);
-        const safeQuantity = String(quantity);
-        const safeDestination = String(destination);
-        const safeOwnerName = String(ownerName).trim();
+        const dateString = typeof date === 'number' ? excelDateToDateString(date) : new Date(dateValue).toISOString().split('T')[0];
+        const safeVehicleNumber = vehicleNumberValue.toUpperCase();
+        const safeMaterial = materialValue;
+        const safeQuantity = quantityValue;
+        const safeDestination = destinationValue;
+        const safeOwnerName = ownerNameValue;
 
-        if (!safeOwnerName) continue;
         const partner = partnerNameMap.get(safeOwnerName);
-        if (!partner) continue;
+        if (!partner) {
+          console.log(`Dispatch row ${i + 1} skipped: partner not found for "${safeOwnerName}"`);
+          continue;
+        }
 
         const key = [dateString, safeVehicleNumber, safeMaterial, safeQuantity, safeDestination, safeOwnerName].join('|');
         if (dispatchKeySet.has(key)) {
           skippedDuplicates++;
+          console.log(`Dispatch row ${i + 1} skipped: duplicate entry`);
           continue;
         }
 
@@ -198,9 +220,12 @@ export async function POST(req: NextRequest) {
         });
         dispatchKeySet.add(key);
         successfulRows++;
+        console.log(`Dispatch row ${i + 1} processed successfully for partner: ${safeOwnerName}`);
       } catch (error) {
         failedRows++;
-        errors.push(`Dispatch row ${i + 1} error: Invalid data format - ${error.message}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`Dispatch row ${i + 1} error: Invalid data format - ${errorMessage}`);
+        console.log(`Dispatch row ${i + 1} processing error:`, error);
         continue;
       }
     }
@@ -209,67 +234,57 @@ export async function POST(req: NextRequest) {
     for (let i = 1; i < dieselRows.length; i++) {
       const row = dieselRows[i];
       if (row.length < 7) {
-        failedRows++;
-        errors.push(`Diesel row ${i + 1} error: Row has insufficient columns (expected 7, got ${row.length})`);
+        console.log(`Diesel row ${i + 1} skipped: insufficient columns (${row.length}/7)`);
         continue;
       }
       const [date, vehicleNumber, volume, item, fuelStation, status, ownerName] = row;
 
-      // Add defensive checks for required fields
-      if (!date || !vehicleNumber || !volume || !item || !fuelStation || !status || !ownerName) {
+      // Convert all values to strings first to handle 0, decimals, and other values properly
+      const dateValue = String(date ?? '').trim();
+      const vehicleNumberValue = String(vehicleNumber ?? '').trim();
+      const volumeValue = String(volume ?? '').trim();
+      const itemValue = String(item ?? '').trim();
+      const fuelStationValue = String(fuelStation ?? '').trim();
+      const statusValue = String(status ?? '').trim();
+      const ownerNameValue = String(ownerName ?? '').trim();
+
+      // Only check for truly empty values (empty strings after trimming)
+      if (!dateValue || !vehicleNumberValue || !volumeValue || !itemValue || !fuelStationValue || !statusValue || !ownerNameValue) {
         failedRows++;
         const missingFields = [];
-        if (!date) missingFields.push('date');
-        if (!vehicleNumber) missingFields.push('vehicle number');
-        if (!volume) missingFields.push('volume');
-        if (!item) missingFields.push('item');
-        if (!fuelStation) missingFields.push('fuel station');
-        if (!status) missingFields.push('status');
-        if (!ownerName) missingFields.push('owner name');
+        if (!dateValue) missingFields.push('date');
+        if (!vehicleNumberValue) missingFields.push('vehicleNumber');
+        if (!volumeValue) missingFields.push('volume');
+        if (!itemValue) missingFields.push('item');
+        if (!fuelStationValue) missingFields.push('fuelStation');
+        if (!statusValue) missingFields.push('status');
+        if (!ownerNameValue) missingFields.push('ownerName');
         errors.push(`Diesel row ${i + 1} error: Missing required field(s): ${missingFields.join(', ')}`);
+        console.log(`Diesel row ${i + 1} failed validation:`, { date: dateValue, vehicleNumber: vehicleNumberValue, volume: volumeValue, item: itemValue, fuelStation: fuelStationValue, status: statusValue, ownerName: ownerNameValue, missingFields });
         continue;
       }
 
       // Safely convert and validate values
       try {
-        const dateString = typeof date === 'number' ? excelDateToDateString(date) : new Date(date).toISOString().split('T')[0];
-        const safeVehicleNumber = String(vehicleNumber).toUpperCase();
-        const safeVolume = String(volume);
-        const safeItem = String(item);
-        const safeFuelStation = String(fuelStation);
-        const safeStatus = String(status);
-        const safeOwnerName = String(ownerName).trim();
-
-        // Validate numeric volume
-        if (isNaN(parseFloat(safeVolume))) {
-          failedRows++;
-          errors.push(`Diesel row ${i + 1} error: Volume must be a valid number`);
-          continue;
-        }
-
-        // Validate date format
-        if (isNaN(new Date(dateString).getTime())) {
-          failedRows++;
-          errors.push(`Diesel row ${i + 1} error: Invalid date format`);
-          continue;
-        }
-
-        if (!safeOwnerName) {
-          failedRows++;
-          errors.push(`Diesel row ${i + 1} error: Owner name cannot be empty`);
-          continue;
-        }
+        const dateString = typeof date === 'number' ? excelDateToDateString(date) : new Date(dateValue).toISOString().split('T')[0];
+        const safeVehicleNumber = vehicleNumberValue.toUpperCase();
+        const safeVolume = volumeValue;
+        const safeItem = itemValue;
+        const safeFuelStation = fuelStationValue;
+        const safeStatus = statusValue;
+        const safeOwnerName = ownerNameValue;
 
         const partner = partnerNameMap.get(safeOwnerName);
         if (!partner) {
-          failedRows++;
-          errors.push(`Diesel row ${i + 1} error: Partner "${safeOwnerName}" not found`);
+          console.log(`Diesel row ${i + 1} skipped: partner not found for "${safeOwnerName}"`);
+          console.log('Available partners:', Array.from(partnerNameMap.keys()));
           continue;
         }
 
         const key = [dateString, safeVehicleNumber, safeVolume, safeItem, safeFuelStation, safeStatus].join('|');
         if (dieselKeySet.has(key)) {
           skippedDuplicates++;
+          console.log(`Diesel row ${i + 1} skipped: duplicate entry`);
           continue;
         }
 
@@ -284,29 +299,21 @@ export async function POST(req: NextRequest) {
         });
         dieselKeySet.add(key);
         successfulRows++;
+        console.log(`Diesel row ${i + 1} processed successfully for partner: ${safeOwnerName}`);
       } catch (error) {
         failedRows++;
-        errors.push(`Diesel row ${i + 1} error: ${error instanceof Error ? error.message : 'Invalid data format'}`);
+        const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+        errors.push(`Diesel row ${i + 1} error: Invalid data format - ${errorMessage}`);
+        console.log(`Diesel row ${i + 1} processing error:`, error);
         continue;
       }
     }
     // Batch insert dispatch and diesel data
-    try {
-      if (dispatchToInsert.length > 0) {
-        await db.insert(dispatchData).values(dispatchToInsert);
-      }
-      if (dieselToInsert.length > 0) {
-        await db.insert(dieselData).values(dieselToInsert);
-      }
-    } catch (error) {
-      console.error('Database insertion error:', error);
-      return NextResponse.json({
-        error: `Failed to save data: ${error instanceof Error ? error.message : 'Unknown error'}`,
-        successfulRows,
-        failedRows,
-        skippedDuplicates,
-        errors,
-      }, { status: 500 });
+    if (dispatchToInsert.length > 0) {
+      await db.insert(dispatchData).values(dispatchToInsert);
+    }
+    if (dieselToInsert.length > 0) {
+      await db.insert(dieselData).values(dieselToInsert);
     }
     return NextResponse.json({
       success: true,

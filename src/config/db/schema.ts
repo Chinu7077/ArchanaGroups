@@ -110,7 +110,7 @@ export const dispatchData = pgTable(
     date: date('date').notNull(),
     vehicleNumber: text('vehicle_number').notNull(),
     material: text('material').notNull(),
-    quantity: decimal('quantity', { precision: 12, scale: 3 }).notNull(), // In tons with higher precision
+    quantity: text('quantity').notNull(), // Stored as text to handle any value including 0, decimals, etc.
     destination: text('destination').notNull(),
     ownerName: text('owner_name').notNull(), // Used to link to partners
     partnerId: uuid('partner_id').references(() => partners.id),
@@ -149,7 +149,7 @@ export const dieselData = pgTable(
     id: uuid('id').defaultRandom().primaryKey(),
     date: date('date').notNull(),
     vehicleNumber: text('vehicle_number').notNull(),
-    volume: decimal('volume', { precision: 10, scale: 3 }).notNull(), // In liters with higher precision
+    volume: text('volume').notNull(), // Stored as text to handle any value including 0, decimals, etc.
     item: text('item').notNull(), // Type of fuel/item
     fuelStation: text('fuel_station').notNull(),
     status: text('status').notNull(), // Status of the transaction
@@ -200,6 +200,7 @@ export const supportQueries = pgTable('support_queries', {
 export const partnersRelations = relations(partners, ({ many }) => ({
   dispatchData: many(dispatchData),
   dieselData: many(dieselData),
+  supportQueries: many(supportQueries),
 }));
 
 export const dispatchDataRelations = relations(dispatchData, ({ one }) => ({
@@ -212,6 +213,13 @@ export const dispatchDataRelations = relations(dispatchData, ({ one }) => ({
 export const dieselDataRelations = relations(dieselData, ({ one }) => ({
   partner: one(partners, {
     fields: [dieselData.partnerId],
+    references: [partners.id],
+  }),
+}));
+
+export const supportQueriesRelations = relations(supportQueries, ({ one }) => ({
+  partner: one(partners, {
+    fields: [supportQueries.partnerId],
     references: [partners.id],
   }),
 }));
@@ -265,7 +273,7 @@ export const insertDispatchDataSchema = createInsertSchema(dispatchData, {
     'Vehicle number is required'
   ),
   material: commonValidations.nonEmptyString('Material is required'),
-  quantity: commonValidations.positiveDecimal('Invalid quantity format'),
+  quantity: z.string().min(1, 'Quantity is required'), // Accept any string value
   destination: commonValidations.nonEmptyString('Destination is required'),
   ownerName: commonValidations.nonEmptyString('Owner name is required'),
   status: z
@@ -285,7 +293,7 @@ export const insertDieselDataSchema = createInsertSchema(dieselData, {
   vehicleNumber: commonValidations.uppercaseString(
     'Vehicle number is required'
   ),
-  volume: commonValidations.positiveDecimal('Invalid volume format'),
+  volume: z.string().min(1, 'Volume is required'), // Accept any string value
   item: commonValidations.nonEmptyString('Item is required'),
   fuelStation: commonValidations.nonEmptyString('Fuel station is required'),
   status: commonValidations.nonEmptyString('Status is required'),
@@ -304,6 +312,27 @@ export const insertDieselDataSchema = createInsertSchema(dieselData, {
 });
 
 export const selectDieselDataSchema = createSelectSchema(dieselData);
+
+// Support Queries schemas
+export const insertSupportQuerySchema = createInsertSchema(supportQueries, {
+  subject: commonValidations.nonEmptyString('Subject is required'),
+  message: commonValidations.nonEmptyString('Message is required'),
+  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+  status: z.enum(['pending', 'in_progress', 'resolved']).default('pending'),
+}).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+  resolvedAt: true,
+});
+
+export const selectSupportQuerySchema = createSelectSchema(supportQueries);
+
+export const supportQuerySchema = z.object({
+  subject: z.string().min(1, 'Subject is required').max(200, 'Subject too long'),
+  message: z.string().min(10, 'Message must be at least 10 characters').max(2000, 'Message too long'),
+  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+});
 
 // Authentication schemas with enhanced validation
 export const loginSchema = z.object({
@@ -371,11 +400,13 @@ export type Partner = typeof partners.$inferSelect;
 export type Admin = typeof admins.$inferSelect;
 export type DispatchData = typeof dispatchData.$inferSelect;
 export type DieselData = typeof dieselData.$inferSelect;
+export type SupportQuery = typeof supportQueries.$inferSelect;
 
 export type InsertPartner = z.infer<typeof insertPartnerSchema>;
 export type InsertAdmin = z.infer<typeof insertAdminSchema>;
 export type InsertDispatchData = z.infer<typeof insertDispatchDataSchema>;
 export type InsertDieselData = z.infer<typeof insertDieselDataSchema>;
+export type InsertSupportQuery = z.infer<typeof insertSupportQuerySchema>;
 
 export type LoginData = z.infer<typeof loginSchema>;
 export type PartnerLoginData = z.infer<typeof partnerLoginSchema>;

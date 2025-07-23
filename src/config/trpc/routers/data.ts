@@ -1,17 +1,10 @@
 import { z } from 'zod';
 import { router, partnerProcedure, protectedProcedure } from '../init';
 import { db, dispatchData, dieselData, dataFilterSchema } from '@/config/db';
-import { supportQueries } from '@/config/db/schema';
+import { supportQueries, supportQuerySchema } from '@/config/db/schema';
 import { and, eq, gte, lte, sql } from 'drizzle-orm';
 import { TRPCError } from '@trpc/server';
 import { desc } from 'drizzle-orm';
-
-// Support query schema
-const supportQuerySchema = z.object({
-  subject: z.string().min(1, 'Subject is required').max(200, 'Subject is too long'),
-  message: z.string().min(1, 'Message is required').max(2000, 'Message is too long'),
-  priority: z.enum(['low', 'normal', 'high']).default('normal'),
-});
 
 export const dataRouter = router({
   // Get dispatch data for partner with filtering
@@ -123,10 +116,10 @@ export const dataRouter = router({
         startDate.setDate(16);
       }
 
-      // Get dispatch summary
+      // Get dispatch summary (cast text to numeric for SUM)
       const dispatchSummary = await db
         .select({
-          totalQuantity: sql<number>`COALESCE(SUM(${dispatchData.quantity}), 0)`,
+          totalQuantity: sql<number>`COALESCE(SUM(CAST(${dispatchData.quantity} AS NUMERIC)), 0)`,
           recordCount: sql<number>`COUNT(*)`,
         })
         .from(dispatchData)
@@ -138,10 +131,10 @@ export const dataRouter = router({
           )
         );
 
-      // Get diesel summary
+      // Get diesel summary (cast text to numeric for SUM)
       const dieselSummary = await db
         .select({
-          totalVolume: sql<number>`COALESCE(SUM(${dieselData.volume}), 0)`,
+          totalVolume: sql<number>`COALESCE(SUM(CAST(${dieselData.volume} AS NUMERIC)), 0)`,
           recordCount: sql<number>`COUNT(*)`,
         })
         .from(dieselData)
@@ -176,7 +169,7 @@ export const dataRouter = router({
   submitSupportQuery: protectedProcedure
     .input(supportQuerySchema)
     .mutation(async ({ input, ctx }) => {
-      if (!ctx.user?.id) {
+      if (!ctx.session?.userId) {
         throw new TRPCError({
           code: 'UNAUTHORIZED',
           message: 'You must be logged in to submit a support query',
@@ -186,7 +179,7 @@ export const dataRouter = router({
       const [query] = await db
         .insert(supportQueries)
         .values({
-          partnerId: ctx.user.id,
+          partnerId: ctx.session.userId,
           subject: input.subject,
           message: input.message,
           priority: input.priority,
@@ -198,7 +191,7 @@ export const dataRouter = router({
 
   // Get partner's support queries
   getSupportQueries: protectedProcedure.query(async ({ ctx }) => {
-    if (!ctx.user?.id) {
+    if (!ctx.session?.userId) {
       throw new TRPCError({
         code: 'UNAUTHORIZED',
         message: 'You must be logged in to view support queries',
@@ -206,7 +199,7 @@ export const dataRouter = router({
     }
 
     const queries = await db.query.supportQueries.findMany({
-      where: eq(supportQueries.partnerId, ctx.user.id),
+      where: eq(supportQueries.partnerId, ctx.session.userId),
       orderBy: [desc(supportQueries.createdAt)],
     });
 

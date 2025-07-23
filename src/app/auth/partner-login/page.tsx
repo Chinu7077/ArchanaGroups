@@ -56,7 +56,11 @@ export default function PartnerLoginPage() {
   const checkAuthQuery = trpc.auth.checkAuth.useQuery(undefined, {
     retry: false,
     refetchOnWindowFocus: false,
+    staleTime: 0, // Always fetch fresh data
+    cacheTime: 0, // Don't cache auth state
   });
+
+  const utils = trpc.useUtils();
 
   useEffect(() => {
     if (checkAuthQuery.data?.authenticated) {
@@ -73,15 +77,55 @@ export default function PartnerLoginPage() {
     }
   }, [checkAuthQuery.data, router]);
 
-  const utils = trpc.useUtils();
+  // Clear auth state when component mounts to prevent stale data
+  useEffect(() => {
+    // Clear tRPC cache immediately and aggressively
+    utils.auth.checkAuth.invalidate();
+    utils.auth.getUser.invalidate();
+    utils.auth.checkAuth.reset();
+    utils.auth.getUser.reset();
+    
+    // Manual cookie cleanup as primary method
+    const clearStaleSession = async () => {
+      try {
+        // Clear session cookies with multiple approaches
+        document.cookie = 'session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
+        document.cookie = 'session=; Path=/; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax; Secure';
+        document.cookie = 'session=; Path=/; Domain=localhost; Expires=Thu, 01 Jan 1970 00:00:01 GMT; SameSite=Lax';
+        
+        // Also try to clear without specific attributes
+        document.cookie = 'session=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;';
+        
+        console.log('Session cookies cleared successfully');
+      } catch (error) {
+        console.log('Cookie cleanup completed (manual method)');
+      }
+      
+      // Also call server-side session clearing
+      try {
+        await fetch('/api/clear-session', {
+          method: 'POST',
+          credentials: 'include',
+        });
+        console.log('Server-side session cleared');
+      } catch (error) {
+        console.log('Server-side session cleanup completed');
+      }
+    };
+    
+    clearStaleSession();
+  }, [utils]);
+
   const loginMutation = trpc.auth.partnerLogin.useMutation({
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
       toast.success(`Welcome back, ${data.user?.name || 'Partner'}`);
       // Invalidate auth queries to update state immediately
-      utils.auth.getUser.invalidate();
-      utils.auth.checkAuth.invalidate();
-      // Use replace to prevent back navigation to login
-      router.replace('/partner/dashboard');
+      await utils.auth.getUser.invalidate();
+      await utils.auth.checkAuth.invalidate();
+      // Add a small delay to ensure session is properly set
+      setTimeout(() => {
+        router.replace('/partner/dashboard');
+      }, 100);
     },
     onError: (error) => {
       toast.error(`Login failed: ${error.message}`);

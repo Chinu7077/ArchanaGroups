@@ -135,6 +135,9 @@ type PartnerSummary = {
 
 const AdminDashboard = () => {
   const searchParams = useSearchParams();
+  const router = useRouter();
+  
+  // State declarations (these are fine as they're already at the top)
   const [activeTab, setActiveTab] = useState(searchParams.get('tab') || 'overview');
   const [showAddPartnerDialog, setShowAddPartnerDialog] = useState(false);
   const [dispatchFile, setDispatchFile] = useState<File | null>(null);
@@ -151,108 +154,44 @@ const AdminDashboard = () => {
     null
   );
   const [fileUploadError, setFileUploadError] = useState<string | null>(null);
-  const router = useRouter();
   const [clearAllDataDialogOpen, setClearAllDataDialogOpen] = useState(false);
-
-  // Data management state
   const [addDialogOpen, setAddDialogOpen] = useState(false);
   const [recordDeleteDialogOpen, setRecordDeleteDialogOpen] = useState(false);
   const [recordType, setRecordType] = useState<'dispatch' | 'diesel'>('dispatch');
   const [selectedRecord, setSelectedRecord] = useState<any>(null);
-  
-  // Search and filter state
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('all'); // 'all', 'thisMonth', 'lastMonth', 'custom'
+  const [dateFilter, setDateFilter] = useState('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
+  const [showResponseDialog, setShowResponseDialog] = useState(false);
+  const [selectedQuery, setSelectedQuery] = useState<any>(null);
 
-  // Filter functions
-  const filterRecords = (records: any[], type: 'dispatch' | 'diesel') => {
-    if (!records) return [];
-    
-    let filtered = [...records];
+  // ALL tRPC queries MUST be called at the top level, before any conditional returns
+  const { data: user, isLoading: userLoading, error: userError } = trpc.auth.getUser.useQuery(undefined, {
+    retry: false,
+    refetchOnWindowFocus: false,
+    staleTime: 0,
+    cacheTime: 0,
+  });
 
-    try {
-      // Date filtering
-      if (dateFilter !== 'all') {  // Only apply date filtering if not "all"
-        let start: Date | null = null;
-        let end: Date | null = null;
-        
-        switch (dateFilter) {
-          case 'thisMonth':
-            start = startOfMonth(new Date());
-            end = endOfMonth(new Date());
-            break;
-          case 'lastMonth':
-            start = startOfMonth(addMonths(new Date(), -1));
-            end = endOfMonth(addMonths(new Date(), -1));
-            break;
-          case 'custom':
-            if (startDate && endDate) {
-              start = new Date(startDate);
-              end = new Date(endDate);
-              end.setHours(23, 59, 59, 999);
-            }
-            break;
-        }
-
-        if (start && end) {
-          filtered = filtered.filter(record => {
-            try {
-              const recordDate = new Date(record.date);
-              return recordDate >= start! && recordDate <= end!;
-            } catch (e) {
-              console.error('Invalid date in record:', record);
-              return false;
-            }
-          });
-        }
-      }
-
-      // Search term filtering
-      if (searchTerm?.trim()) {
-        const searchLower = searchTerm.toLowerCase().trim();
-        filtered = filtered.filter(record => {
-          try {
-            if (type === 'dispatch') {
-              return (
-                String(record.vehicleNumber || '').toLowerCase().includes(searchLower) ||
-                String(record.material || '').toLowerCase().includes(searchLower) ||
-                String(record.destination || '').toLowerCase().includes(searchLower) ||
-                String(record.ownerName || '').toLowerCase().includes(searchLower) ||
-                String(record.quantity || '').includes(searchLower) ||
-                new Date(record.date).toLocaleDateString().includes(searchLower)
-              );
-            } else {
-              return (
-                String(record.vehicleNumber || '').toLowerCase().includes(searchLower) ||
-                String(record.item || '').toLowerCase().includes(searchLower) ||
-                String(record.fuelStation || '').toLowerCase().includes(searchLower) ||
-                String(record.status || '').toLowerCase().includes(searchLower) ||
-                String(record.ownerName || '').toLowerCase().includes(searchLower) ||
-                String(record.volume || '').includes(searchLower) ||
-                new Date(record.date).toLocaleDateString().includes(searchLower)
-              );
-            }
-          } catch (e) {
-            console.error('Error filtering record:', record);
-            return false;
-          }
-        });
-      }
-
-      return filtered;
-    } catch (e) {
-      console.error('Error in filterRecords:', e);
-      return records; // Return original records if filtering fails
-    }
-  };
-
-  // Get data
   const { data: dispatchData, refetch: refetchDispatch } = trpc.admin.getAllDispatchRecords.useQuery();
   const { data: dieselData, refetch: refetchDiesel } = trpc.admin.getAllDieselRecords.useQuery();
   
-  // Mutations
+  const {
+    data: stats,
+    isLoading: statsLoading,
+    refetch: refetchStats,
+  } = trpc.admin.getPartnerStats.useQuery();
+
+  const {
+    data: partners,
+    isLoading: partnersLoading,
+    refetch: refetchPartners,
+  } = trpc.admin.getPartners.useQuery();
+
+  const { data: supportQueries, refetch: refetchQueries } = trpc.admin.getSupportQueries.useQuery();
+  
+  // ALL mutations MUST also be at the top level
   const addDispatchMutation = trpc.admin.addDispatchRecord.useMutation({
     onSuccess: () => {
       toast.success('Dispatch record added successfully');
@@ -305,23 +244,110 @@ const AdminDashboard = () => {
     },
   });
 
-  // Clear all data mutation
-  const clearAllDataMutation = trpc.admin.clearAllData.useMutation({
-    onSuccess: () => {
-      toast.success('All data has been cleared successfully');
-      // Refresh all data
-      refetchStats();
+  const createPartnerMutation = trpc.admin.createPartner.useMutation({
+    onSuccess: (data: { id: string; partnerId: string; password: string }) => {
+      setTemporaryPasswords((prev) => ({
+        ...prev,
+        [data.id]: data.password,
+      }));
+
+      setTimeout(
+        () => {
+          setTemporaryPasswords((prev) => {
+            const updated = { ...prev };
+            delete updated[data.id];
+            return updated;
+          });
+        },
+        5 * 60 * 1000
+      );
+
+      toast.success(
+        `Partner created! ID: ${data.partnerId}, Password: ${data.password}`
+      );
+      setShowAddPartnerDialog(false);
+      addPartnerForm.reset();
       refetchPartners();
+      refetchStats();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Failed to create partner: ${error.message}`);
+    },
+  });
+
+  const resetPasswordMutation = trpc.admin.resetPartnerPassword.useMutation({
+    onSuccess: (
+      data: { newPassword: string },
+      variables: { partnerId: string }
+    ) => {
+      setTemporaryPasswords((prev) => ({
+        ...prev,
+        [variables.partnerId]: data.newPassword,
+      }));
+
+      setTimeout(
+        () => {
+          setTemporaryPasswords((prev) => {
+            const updated = { ...prev };
+            delete updated[variables.partnerId];
+            return updated;
+          });
+        },
+        5 * 60 * 1000
+      );
+
+      toast.success(`Password reset! New password: ${data.newPassword}`);
+      refetchPartners();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Failed to reset password: ${error.message}`);
+    },
+  });
+
+  const deletePartnerMutation = trpc.admin.deletePartner.useMutation({
+    onSuccess: () => {
+      toast.success('Partner deleted successfully');
+      setDeleteDialogOpen(false);
+      refetchPartners();
+      refetchStats();
+    },
+    onError: (error: { message: string }) => {
+      toast.error(`Failed to delete partner: ${error.message}`);
+    },
+  });
+
+  const clearDataMutation = trpc.admin.clearAllData.useMutation({
+    onSuccess: () => {
+      toast.success('All data cleared successfully');
+      setClearAllDataDialogOpen(false);
       refetchDispatch();
       refetchDiesel();
-      setClearAllDataDialogOpen(false);
+      refetchStats();
     },
-    onError: (error) => {
+    onError: (error: { message: string }) => {
       toast.error(`Failed to clear data: ${error.message}`);
     },
   });
 
-  // Form
+  const updateQueryMutation = trpc.admin.updateSupportQuery.useMutation({
+    onSuccess: () => {
+      toast.success('Query updated successfully');
+      setShowResponseDialog(false);
+      refetchQueries();
+    },
+    onError: (error) => {
+      toast.error(`Failed to update query: ${error.message}`);
+    },
+  });
+
+  // ALL form hooks must also be at the top level
+  const addPartnerForm = useForm<AddPartnerFormData>({
+    resolver: zodResolver(addPartnerSchema),
+    defaultValues: {
+      name: '',
+    },
+  });
+
   const recordForm = useForm({
     resolver: zodResolver(recordType === 'dispatch' ? dispatchRecordSchema : dieselRecordSchema),
     defaultValues: {
@@ -337,6 +363,17 @@ const AdminDashboard = () => {
       ownerName: '',
     },
   });
+
+  // ALL useEffect hooks must also be at the top level
+  useEffect(() => {
+    if (!userLoading && (!user || user.role !== 'admin')) {
+      router.push('/auth/admin-login');
+    }
+  }, [user, userLoading, router]);
+
+  useEffect(() => {
+    setActiveTab(searchParams.get('tab') || 'overview');
+  }, [searchParams]);
 
   // Handlers
   const handleAddRecord = (type: 'dispatch' | 'diesel') => {
@@ -410,98 +447,15 @@ const AdminDashboard = () => {
   };
 
   // Get current user
-  const { data: user, isLoading: userLoading } = trpc.auth.getUser.useQuery();
+  // const { data: user, isLoading: userLoading, error: userError } = trpc.auth.getUser.useQuery(undefined, {
+  //   retry: false,
+  //   refetchOnWindowFocus: false,
+  //   staleTime: 0, // Always fetch fresh data
+  //   cacheTime: 0, // Don't cache auth state
+  // });
 
-  // Get partner statistics
-  const {
-    data: stats,
-    isLoading: statsLoading,
-    refetch: refetchStats,
-  } = trpc.admin.getPartnerStats.useQuery();
-
-  // Get partners list
-  const {
-    data: partners,
-    isLoading: partnersLoading,
-    refetch: refetchPartners,
-  } = trpc.admin.getPartners.useQuery();
-
-  // Mutations
-  const createPartnerMutation = trpc.admin.createPartner.useMutation({
-    onSuccess: (data: { id: string; partnerId: string; password: string }) => {
-      // Store the password temporarily for copying
-      setTemporaryPasswords((prev) => ({
-        ...prev,
-        [data.id]: data.password,
-      }));
-
-      // Clear after 5 minutes for security
-      setTimeout(
-        () => {
-          setTemporaryPasswords((prev) => {
-            const updated = { ...prev };
-            delete updated[data.id];
-            return updated;
-          });
-        },
-        5 * 60 * 1000
-      );
-
-      toast.success(
-        `Partner created! ID: ${data.partnerId}, Password: ${data.password}`
-      );
-      setShowAddPartnerDialog(false);
-      addPartnerForm.reset();
-      refetchPartners();
-      refetchStats();
-    },
-    onError: (error: { message: string }) => {
-      toast.error(`Failed to create partner: ${error.message}`);
-    },
-  });
-
-  const resetPasswordMutation = trpc.admin.resetPartnerPassword.useMutation({
-    onSuccess: (
-      data: { newPassword: string },
-      variables: { partnerId: string }
-    ) => {
-      // Store the new password temporarily for copying using the ID we sent
-      setTemporaryPasswords((prev) => ({
-        ...prev,
-        [variables.partnerId]: data.newPassword,
-      }));
-
-      // Clear after 5 minutes for security
-      setTimeout(
-        () => {
-          setTemporaryPasswords((prev) => {
-            const updated = { ...prev };
-            delete updated[variables.partnerId];
-            return updated;
-          });
-        },
-        5 * 60 * 1000
-      );
-
-      toast.success(`Password reset! New password: ${data.newPassword}`);
-      refetchPartners();
-    },
-    onError: (error: { message: string }) => {
-      toast.error(`Failed to reset password: ${error.message}`);
-    },
-  });
-
-  const deletePartnerMutation = trpc.admin.deletePartner.useMutation({
-    onSuccess: () => {
-      toast.success('Partner deleted successfully!');
-      refetchPartners();
-      refetchStats();
-    },
-    onError: () => {
-      toast.error('Failed to delete partner');
-    },
-  });
-
+  // Redirect if not authenticated or not admin
+  // Utility hooks
   const utils = trpc.useUtils();
   const logoutMutation = trpc.auth.logout.useMutation({
     onSuccess: () => {
@@ -529,13 +483,7 @@ const AdminDashboard = () => {
     logoutMutation.mutate();
   };
 
-  // Add Partner Form
-  const addPartnerForm = useForm<AddPartnerFormData>({
-    resolver: zodResolver(addPartnerSchema),
-    defaultValues: {
-      name: '',
-    },
-  });
+
 
   const handleCreatePartner = (data: AddPartnerFormData) => {
     createPartnerMutation.mutate({ name: data.name.trim() });
@@ -709,19 +657,109 @@ const AdminDashboard = () => {
     toast.success('Partner credentials exported to Excel file');
   };
 
-  // Redirect if not authenticated or not admin
-  useEffect(() => {
-    if (!userLoading && (!user || user.role !== 'admin')) {
-      router.push('/auth/admin-login');
-    }
-  }, [user, userLoading, router]);
+  // Filter functions
+  const filterRecords = (records: any[], type: 'dispatch' | 'diesel') => {
+    if (!records) return [];
+    
+    let filtered = [...records];
 
-  if (userLoading || !user) {
+    try {
+      // Date filtering
+      if (dateFilter !== 'all') {  // Only apply date filtering if not "all"
+        let start: Date | null = null;
+        let end: Date | null = null;
+        
+        switch (dateFilter) {
+          case 'thisMonth':
+            start = startOfMonth(new Date());
+            end = endOfMonth(new Date());
+            break;
+          case 'lastMonth':
+            start = startOfMonth(addMonths(new Date(), -1));
+            end = endOfMonth(addMonths(new Date(), -1));
+            break;
+          case 'custom':
+            if (startDate && endDate) {
+              start = new Date(startDate);
+              end = new Date(endDate);
+              end.setHours(23, 59, 59, 999);
+            }
+            break;
+        }
+
+        if (start && end) {
+          filtered = filtered.filter(record => {
+            try {
+              const recordDate = new Date(record.date);
+              return recordDate >= start! && recordDate <= end!;
+            } catch (e) {
+              console.error('Invalid date in record:', record);
+              return false;
+            }
+          });
+        }
+      }
+
+      // Search term filtering
+      if (searchTerm?.trim()) {
+        const searchLower = searchTerm.toLowerCase().trim();
+        filtered = filtered.filter(record => {
+          try {
+            if (type === 'dispatch') {
+              return (
+                String(record.vehicleNumber || '').toLowerCase().includes(searchLower) ||
+                String(record.material || '').toLowerCase().includes(searchLower) ||
+                String(record.destination || '').toLowerCase().includes(searchLower) ||
+                String(record.ownerName || '').toLowerCase().includes(searchLower) ||
+                String(record.quantity || '').includes(searchLower) ||
+                new Date(record.date).toLocaleDateString().includes(searchLower)
+              );
+            } else {
+              return (
+                String(record.vehicleNumber || '').toLowerCase().includes(searchLower) ||
+                String(record.item || '').toLowerCase().includes(searchLower) ||
+                String(record.fuelStation || '').toLowerCase().includes(searchLower) ||
+                String(record.status || '').toLowerCase().includes(searchLower) ||
+                String(record.ownerName || '').toLowerCase().includes(searchLower) ||
+                String(record.volume || '').includes(searchLower) ||
+                new Date(record.date).toLocaleDateString().includes(searchLower)
+              );
+            }
+          } catch (e) {
+            console.error('Error filtering record:', record);
+            return false;
+          }
+        });
+      }
+
+      return filtered;
+    } catch (e) {
+      console.error('Error in filterRecords:', e);
+      return records; // Return original records if filtering fails
+    }
+  };
+
+
+
+  // Show loading state while checking authentication or if there's an auth error
+  if (userLoading) {
     return (
       <div className="bg-background flex min-h-screen items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
-          <span>Loading...</span>
+          <span>Verifying authentication...</span>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading if user is not available yet (but not loading)
+  if (!user || user.role !== 'admin') {
+    return (
+      <div className="bg-background flex min-h-screen items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <div className="border-primary h-6 w-6 animate-spin rounded-full border-2 border-t-transparent" />
+          <span>Redirecting...</span>
         </div>
       </div>
     );
@@ -730,22 +768,6 @@ const AdminDashboard = () => {
   // Get filtered data
   const filteredDispatchData = filterRecords(dispatchData || [], 'dispatch');
   const filteredDieselData = filterRecords(dieselData || [], 'diesel');
-
-  const [showResponseDialog, setShowResponseDialog] = useState(false);
-  const [selectedQuery, setSelectedQuery] = useState<any>(null);
-
-  const { data: supportQueries, refetch: refetchQueries } = trpc.admin.getSupportQueries.useQuery();
-
-  const updateQueryMutation = trpc.admin.updateSupportQuery.useMutation({
-    onSuccess: () => {
-      toast.success('Query updated successfully');
-      setShowResponseDialog(false);
-      refetchQueries();
-    },
-    onError: (error) => {
-      toast.error(`Failed to update query: ${error.message}`);
-    },
-  });
 
   return (
     <div className="bg-background min-h-screen">
@@ -1751,11 +1773,11 @@ const AdminDashboard = () => {
               Cancel
             </AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => clearAllDataMutation.mutate()}
-              disabled={clearAllDataMutation.isPending}
+              onClick={() => clearDataMutation.mutate()}
+              disabled={clearDataMutation.isPending}
               className="bg-red-600 hover:bg-red-700"
             >
-              {clearAllDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
+              {clearDataMutation.isPending ? 'Clearing...' : 'Clear All Data'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

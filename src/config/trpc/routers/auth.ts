@@ -17,7 +17,7 @@ export const authRouter = router({
   // Partner login
   partnerLogin: publicProcedure
     .input(partnerLoginSchema)
-    .mutation(async ({ input, ctx }) => {
+    .mutation(async ({ input }) => {
       const result = await authenticatePartner(input.partnerId, input.password);
 
       if (!result.success) {
@@ -28,15 +28,11 @@ export const authRouter = router({
       }
 
       if ('partner' in result && result.partner) {
-        const session = await createSession({ ...result.partner, role: 'partner' as const });
-
-        // Update context immediately
-        ctx.session = await verifySession();
+        await createSession({ ...result.partner, role: 'partner' as const });
 
         return {
           success: true,
           user: result.partner,
-          session,
         };
       }
 
@@ -47,7 +43,7 @@ export const authRouter = router({
     }),
 
   // Admin login
-  adminLogin: publicProcedure.input(loginSchema).mutation(async ({ input, ctx }) => {
+  adminLogin: publicProcedure.input(loginSchema).mutation(async ({ input }) => {
     const result = await authenticateAdmin(input.username, input.password);
 
     if (!result.success) {
@@ -58,15 +54,11 @@ export const authRouter = router({
     }
 
     if ('admin' in result && result.admin) {
-      const session = await createSession({ ...result.admin, role: 'admin' as const });
-
-      // Update context immediately
-      ctx.session = await verifySession();
+      await createSession({ ...result.admin, role: 'admin' as const });
 
       return {
         success: true,
         user: result.admin,
-        session,
       };
     }
 
@@ -77,14 +69,13 @@ export const authRouter = router({
   }),
 
   // Logout
-  logout: protectedProcedure.mutation(async ({ ctx }) => {
+  logout: protectedProcedure.mutation(async () => {
     await deleteSession();
-    ctx.session = null; // Clear session from context
     return { success: true };
   }),
 
   // Get current user (public procedure to avoid 401 errors)
-  getUser: publicProcedure.query(async ({ ctx }) => {
+  getUser: publicProcedure.query(async () => {
     const session = await verifySession();
     
     if (!session) {
@@ -101,7 +92,7 @@ export const authRouter = router({
   }),
 
   // Check session validity
-  checkAuth: publicProcedure.query(async ({ ctx }) => {
+  checkAuth: publicProcedure.query(async () => {
     const session = await verifySession();
 
     if (!session) {
