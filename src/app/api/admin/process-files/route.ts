@@ -154,7 +154,9 @@ export async function POST(req: NextRequest) {
     const allDispatch = await db.select().from(dispatchData);
     const allDiesel = await db.select().from(dieselData);
     const dispatchKeySet = new Set(allDispatch.map(d => [d.date, d.vehicleNumber, d.material, d.quantity, d.destination, d.ownerName].join('|')));
-    const dieselKeySet = new Set(allDiesel.map(d => [d.date, d.vehicleNumber, d.volume, d.item, d.fuelStation, d.status].join('|')));
+    // For diesel data, we don't enforce strict duplicate detection since vehicles can legitimately
+    // refuel multiple times per day with same quantity and at same station
+    const dieselKeySet = new Set(); // Empty set - no duplicate checking for diesel
     // Process dispatch rows
     for (let i = 1; i < dispatchRows.length; i++) {
       const row = dispatchRows[i];
@@ -281,12 +283,9 @@ export async function POST(req: NextRequest) {
           continue;
         }
 
-        const key = [dateString, safeVehicleNumber, safeVolume, safeItem, safeFuelStation, safeStatus].join('|');
-        if (dieselKeySet.has(key)) {
-          skippedDuplicates++;
-          console.log(`Diesel row ${i + 1} skipped: duplicate entry`);
-          continue;
-        }
+        // For diesel data, we don't check for duplicates since vehicles can legitimately
+        // refuel multiple times per day with same quantity at same pump
+        // This allows all valid diesel entries to be processed without skipping
 
         dieselToInsert.push({
           date: dateString,
@@ -297,7 +296,6 @@ export async function POST(req: NextRequest) {
           status: safeStatus,
           partnerId: partner.id,
         });
-        dieselKeySet.add(key);
         successfulRows++;
         console.log(`Diesel row ${i + 1} processed successfully for partner: ${safeOwnerName}`);
       } catch (error) {
