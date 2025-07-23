@@ -116,10 +116,10 @@ export const dataRouter = router({
         startDate.setDate(16);
       }
 
-      // Get dispatch summary (cast text to numeric for SUM using PostgreSQL :: syntax)
+      // Get dispatch summary (cast text to numeric for SUM)
       const dispatchSummary = await db
         .select({
-          totalQuantity: sql<number>`COALESCE(SUM(quantity::numeric), 0)`,
+          totalQuantity: sql<number>`COALESCE(SUM(CAST(${dispatchData.quantity} AS NUMERIC)), 0)`,
           recordCount: sql<number>`COUNT(*)`,
         })
         .from(dispatchData)
@@ -131,10 +131,10 @@ export const dataRouter = router({
           )
         );
 
-      // Get diesel summary (cast text to numeric for SUM using PostgreSQL :: syntax)
+      // Get diesel summary (cast text to numeric for SUM)
       const dieselSummary = await db
         .select({
-          totalVolume: sql<number>`COALESCE(SUM(volume::numeric), 0)`,
+          totalVolume: sql<number>`COALESCE(SUM(CAST(${dieselData.volume} AS NUMERIC)), 0)`,
           recordCount: sql<number>`COUNT(*)`,
         })
         .from(dieselData)
@@ -182,7 +182,8 @@ export const dataRouter = router({
           partnerId: ctx.session.userId,
           subject: input.subject,
           message: input.message,
-          priority: input.priority,
+          status: 'pending', // explicit status
+          priority: input.priority || 'normal', // explicit priority with fallback
         })
         .returning();
 
