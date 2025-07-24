@@ -85,7 +85,7 @@ const supportQuerySchema = z.object({
     .string()
     .min(1, 'Message is required')
     .max(2000, 'Message is too long'),
-  priority: z.enum(['low', 'normal', 'high']).default('normal'),
+  priority: z.enum(['low', 'normal', 'high']),
 });
 
 type SupportQueryFormData = z.infer<typeof supportQuerySchema>;
@@ -108,7 +108,7 @@ const PartnerDashboard = () => {
     retry: false,
     refetchOnWindowFocus: false,
     staleTime: 0, // Always fetch fresh data
-    cacheTime: 0, // Don't cache auth state
+    gcTime: 0, // Don't cache auth state (formerly cacheTime)
   });
 
   // Get dashboard summary
@@ -169,7 +169,7 @@ const PartnerDashboard = () => {
     defaultValues: {
       subject: '',
       message: '',
-      priority: 'normal',
+      priority: 'normal' as const,
     },
   });
 
@@ -947,7 +947,7 @@ const PartnerDashboard = () => {
         </div>
 
         {/* Previous Queries Section */}
-        {supportQueries?.length > 0 && (
+        {supportQueries && supportQueries.length > 0 && (
           <div className="mt-8">
             <Card>
               <CardHeader>
@@ -960,7 +960,7 @@ const PartnerDashboard = () => {
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  {supportQueries.map((query) => (
+                  {supportQueries?.map((query) => (
                     <Card key={query.id} className="bg-gray-50">
                       <CardHeader>
                         <div className="flex items-center justify-between">
@@ -969,7 +969,7 @@ const PartnerDashboard = () => {
                               {query.subject}
                             </CardTitle>
                             <p className="text-sm text-gray-500">
-                              {new Date(query.createdAt).toLocaleDateString()}
+                              {query.createdAt ? new Date(query.createdAt).toLocaleDateString() : 'Date not available'}
                             </p>
                           </div>
                           <Badge
